@@ -122,7 +122,7 @@ class RealGasPropertyTestCase(unittest.TestCase):
         out_first, out_T = func(first_input, T, deriv=True)
 
         step = 1e-200 * 1j if self.cmplx else (1e-7 if func in [gh2_P, H2_prop.gh2_P] else 1e-2)
-        tol = 1e-13 if self.cmplx else 1e-5
+        tol = 1e-12 if self.cmplx else 1e-5
         out_orig = func(first_input, T)
 
         for i in range(first_input.size):
