@@ -20,7 +20,7 @@ from openmdao.utils.assert_utils import assert_near_equal, assert_check_partials
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from scripts.models.weight import *
+from hytank.weight import *
 
 
 class VacuumTankWeightTestCase(unittest.TestCase):

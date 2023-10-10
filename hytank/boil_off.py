@@ -20,13 +20,13 @@ import scipy.interpolate
 import scipy.integrate
 import openmdao.api as om
 from openmdao.core.analysis_error import AnalysisError
-from openconcept.utilities.constants import GRAV_CONST, UNIVERSAL_GAS_CONST, MOLEC_WEIGHT_H2
-from openconcept.utilities import Integrator
 
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from scripts.models.H2_properties import HydrogenProperties
+from hytank.H2_properties import HydrogenProperties
+from hytank.utilities.constants import GRAV_CONST, UNIVERSAL_GAS_CONST, MOLEC_WEIGHT_H2
+from hytank.utilities import Integrator
 
 
 # Thermophysical hydrogen properties to use in the model

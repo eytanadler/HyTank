@@ -19,7 +19,7 @@ from openmdao.utils.assert_utils import assert_near_equal
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from scripts.models.LH2_tank import *
+from hytank.LH2_tank import *
 
 
 class LH2TankTestCase(unittest.TestCase):

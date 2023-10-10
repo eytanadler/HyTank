@@ -21,7 +21,7 @@ import numpy as np
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from openconcept.utilities.constants import MOLEC_WEIGHT_H2, UNIVERSAL_GAS_CONST
+from hytank.utilities.constants import MOLEC_WEIGHT_H2, UNIVERSAL_GAS_CONST
 
 
 def gh2_P(rho, T, deriv=False):

@@ -14,11 +14,11 @@
 # ==============================================================================
 import numpy as np
 import openmdao.api as om
-from openconcept.utilities import ElementMultiplyDivideComp
 
 # ==============================================================================
 # Extension modules
 # ==============================================================================
+from hytank.utilities import ElementMultiplyDivideComp
 
 
 class HeatTransferVacuumTank(om.Group):

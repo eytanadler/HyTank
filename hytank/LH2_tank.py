@@ -14,14 +14,14 @@
 # ==============================================================================
 import numpy as np
 import openmdao.api as om
-from openconcept.utilities.math.add_subtract_comp import AddSubtractComp
 
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from scripts.models.weight import VacuumTankWeight
-from scripts.models.heat_leak import HeatTransferVacuumTank
-from scripts.models.boil_off import BoilOff
+from hytank.weight import VacuumTankWeight
+from hytank.heat_leak import HeatTransferVacuumTank
+from hytank.boil_off import BoilOff
+from hytank.utilities import AddSubtractComp
 
 
 class LH2Tank(om.Group):

@@ -14,11 +14,11 @@
 # ==============================================================================
 import numpy as np
 import openmdao.api as om
-from openconcept.utilities import AddSubtractComp
 
 # ==============================================================================
 # Extension modules
 # ==============================================================================
+from hytank.utilities import AddSubtractComp
 
 
 class VacuumTankWeight(om.Group):

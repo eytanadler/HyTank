@@ -20,8 +20,8 @@ from openmdao.utils.assert_utils import assert_near_equal
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from scripts.models.H2_properties_MendezRamos import *
-from scripts.models.H2_properties import HydrogenProperties
+from hytank.H2_properties_MendezRamos import *
+from hytank.H2_properties import HydrogenProperties
 
 
 H2_prop = HydrogenProperties()

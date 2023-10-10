@@ -21,7 +21,7 @@ import scipy.interpolate as interp
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from scripts.models.H2_property_data.data_parser import get_sat_property, get_property
+from hytank.H2_property_data.data_parser import get_sat_property, get_property
 
 
 class HydrogenProperties:
