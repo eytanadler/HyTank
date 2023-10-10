@@ -111,7 +111,7 @@ class LH2Tank(om.Group):
         Multiplier on the output heat to account for heat through supports
         and other connections, by default 1.2 (scalar, dimensionless)
     weight_fudge_factor : float
-        Multiplier on tank weight to account for supports, valves, etc., by default 1.1
+        Multiplier on tank weight to account for supports, valves, etc., by default 1.5
     stiffening_multiplier : float
         Machining stiffeners into the inner side of the vacuum shell enhances its buckling
         performance, enabling weight reductions. The value provided in this option is a
@@ -120,7 +120,7 @@ class LH2Tank(om.Group):
         (https://ntrs.nasa.gov/citations/20060021606), but has been made much more
         conservative to fall more in line with ~60% gravimetric efficiency tanks
     inner_safety_factor : float
-        Safety factor for sizing inner wall, by default 1.5
+        Safety factor for sizing inner wall, by default 2.0
     inner_yield_stress : float
         Yield stress of inner wall material (Pa), by default Al 2014-T6 taken from Table IV of
         Sullivan et al. 2006 (https://ntrs.nasa.gov/citations/20060021606)
@@ -145,9 +145,9 @@ class LH2Tank(om.Group):
         self.options.declare("liquid_T_init", default=20.0, desc="Initial bulk liquid temp (K)")
         self.options.declare("heater_Q_add_init", default=0.0, types=float, desc="Initial heat input from heater")
         self.options.declare("heat_multiplier", default=1.2, desc="Multiplier on heat leak")
-        self.options.declare("weight_fudge_factor", default=1.1, desc="Weight multiplier to account for other stuff")
+        self.options.declare("weight_fudge_factor", default=1.5, desc="Weight multiplier to account for other stuff")
         self.options.declare("stiffening_multiplier", default=0.8, desc="Multiplier on wall thickness")
-        self.options.declare("inner_safety_factor", default=1.5, desc="Safety factor on inner wall thickness")
+        self.options.declare("inner_safety_factor", default=2.0, desc="Safety factor on inner wall thickness")
         self.options.declare("inner_yield_stress", default=413.7e6, desc="Yield stress of inner wall material in Pa")
         self.options.declare("inner_density", default=2796.0, desc="Density of inner wall material in kg/m^3")
         self.options.declare("outer_safety_factor", default=2.0, desc="Safety factor on outer wall thickness")
