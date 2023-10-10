@@ -1,5 +1,7 @@
 # HyTank
 
+[![Build](https://github.com/eytanadler/HyTank/actions/workflows/hytank.yaml/badge.svg?branch=main)](https://github.com/eytanadler/HyTank/actions/workflows/hytank.yaml)
+
 HyTank is a toolkit for modeling the behavior of cryogenic liquid hydrogen tanks.
 It includes models for boil-off (including fuel extraction/filling and heater operation), heat leak, and tank weight.
 
