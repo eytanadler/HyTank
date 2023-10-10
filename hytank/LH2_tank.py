@@ -1,8 +1,25 @@
-import openmdao.api as om
-import numpy as np
+"""
+@File    :   LH2_tank.py
+@Date    :   2023/10/10
+@Author  :   Eytan Adler
+@Description : Groups the combine the necessary components to form a full tank model
+"""
 
-from scripts.models.weight import VacuumTankWeight
+# ==============================================================================
+# Standard Python modules
+# ==============================================================================
+
+# ==============================================================================
+# External Python modules
+# ==============================================================================
+import numpy as np
+import openmdao.api as om
 from openconcept.utilities.math.add_subtract_comp import AddSubtractComp
+
+# ==============================================================================
+# Extension modules
+# ==============================================================================
+from scripts.models.weight import VacuumTankWeight
 from scripts.models.heat_leak import HeatTransferVacuumTank
 from scripts.models.boil_off import BoilOff
 

@@ -1,7 +1,25 @@
+"""
+@File    :   test_weight.py
+@Date    :   2023/10/10
+@Author  :   Eytan Adler
+@Description : Test the code in weight.py
+"""
+
+# ==============================================================================
+# Standard Python modules
+# ==============================================================================
 import unittest
+
+# ==============================================================================
+# External Python modules
+# ==============================================================================
 import numpy as np
-from openmdao.utils.assert_utils import assert_near_equal, assert_check_partials
 import openmdao.api as om
+from openmdao.utils.assert_utils import assert_near_equal, assert_check_partials
+
+# ==============================================================================
+# Extension modules
+# ==============================================================================
 from scripts.models.weight import *
 
 

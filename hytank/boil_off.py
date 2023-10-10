@@ -1,13 +1,31 @@
-import numpy as np
+"""
+@File    :   boil_off.py
+@Date    :   2023/10/10
+@Author  :   Eytan Adler
+@Description : Components for computing and integrationg the boil-off and heater ODEs
+"""
+
+# ==============================================================================
+# Standard Python modules
+# ==============================================================================
 import os
 import warnings
 from copy import deepcopy
+
+# ==============================================================================
+# External Python modules
+# ==============================================================================
+import numpy as np
 import scipy.interpolate
 import scipy.integrate
 import openmdao.api as om
 from openmdao.core.analysis_error import AnalysisError
 from openconcept.utilities.constants import GRAV_CONST, UNIVERSAL_GAS_CONST, MOLEC_WEIGHT_H2
 from openconcept.utilities import Integrator
+
+# ==============================================================================
+# Extension modules
+# ==============================================================================
 from scripts.models.H2_properties import HydrogenProperties
 
 

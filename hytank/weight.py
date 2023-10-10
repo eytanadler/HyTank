@@ -1,6 +1,24 @@
+"""
+@File    :   weight.py
+@Date    :   2023/10/10
+@Author  :   Eytan Adler
+@Description : Components to estimate a vacuum-insulated tank's weight
+"""
+
+# ==============================================================================
+# Standard Python modules
+# ==============================================================================
+
+# ==============================================================================
+# External Python modules
+# ==============================================================================
 import numpy as np
 import openmdao.api as om
 from openconcept.utilities import AddSubtractComp
+
+# ==============================================================================
+# Extension modules
+# ==============================================================================
 
 
 class VacuumTankWeight(om.Group):

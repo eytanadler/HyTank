@@ -1,6 +1,24 @@
+"""
+@File    :   test_LH2_tank.py
+@Date    :   2023/10/10
+@Author  :   Eytan Adler
+@Description : Test the code in LH2_tank.py
+"""
+
+# ==============================================================================
+# Standard Python modules
+# ==============================================================================
 import unittest
-from openmdao.utils.assert_utils import assert_near_equal
+
+# ==============================================================================
+# External Python modules
+# ==============================================================================
 import openmdao.api as om
+from openmdao.utils.assert_utils import assert_near_equal
+
+# ==============================================================================
+# Extension modules
+# ==============================================================================
 from scripts.models.LH2_tank import *
 
 

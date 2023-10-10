@@ -1,7 +1,25 @@
+"""
+@File    :   test_boil_off.py
+@Date    :   2023/10/10
+@Author  :   Eytan Adler
+@Description : Test the code in boil_off.py
+"""
+
+# ==============================================================================
+# Standard Python modules
+# ==============================================================================
 import unittest
+
+# ==============================================================================
+# External Python modules
+# ==============================================================================
 import numpy as np
-from openmdao.utils.assert_utils import assert_near_equal, assert_check_partials
 import openmdao.api as om
+from openmdao.utils.assert_utils import assert_near_equal, assert_check_partials
+
+# ==============================================================================
+# Extension modules
+# ==============================================================================
 import scripts.models.H2_properties_MendezRamos as H2_prop_MendezRamos
 from scripts.models.H2_properties import HydrogenProperties
 from scripts.models.boil_off import *

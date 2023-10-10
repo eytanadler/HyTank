@@ -1,9 +1,29 @@
-import numpy as np
+"""
+@File    :   test_H2_properties.py
+@Date    :   2023/10/10
+@Author  :   Eytan Adler
+@Description : Test the code in H2_properties.py and H2_properties_MendezRamos.py
+"""
+
+# ==============================================================================
+# Standard Python modules
+# ==============================================================================
 import unittest
+
+# ==============================================================================
+# External Python modules
+# ==============================================================================
+import numpy as np
 from parameterized import parameterized_class
 from openmdao.utils.assert_utils import assert_near_equal
+
+# ==============================================================================
+# Extension modules
+# ==============================================================================
 from scripts.models.H2_properties_MendezRamos import *
 from scripts.models.H2_properties import HydrogenProperties
+
+
 H2_prop = HydrogenProperties()
 
 # For some reason need to wrap function handle in list to properly call it

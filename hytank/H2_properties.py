@@ -1,8 +1,26 @@
+"""
+@File    :   H2_properties.py
+@Date    :   2023/10/10
+@Author  :   Eytan Adler
+@Description : Surrogate models based on NIST data to compute thermophysical properties of hydrogen
+"""
+
+# ==============================================================================
+# Standard Python modules
+# ==============================================================================
 import os
-import numpy as np
 import pickle
 from time import time
+
+# ==============================================================================
+# External Python modules
+# ==============================================================================
+import numpy as np
 import scipy.interpolate as interp
+
+# ==============================================================================
+# Extension modules
+# ==============================================================================
 from scripts.models.H2_property_data.data_parser import get_sat_property, get_property
 
 

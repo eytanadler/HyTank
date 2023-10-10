@@ -1,6 +1,24 @@
+"""
+@File    :   heat_leak.py
+@Date    :   2023/10/10
+@Author  :   Eytan Adler
+@Description : Components to estimate heat leak through the tank wall
+"""
+
+# ==============================================================================
+# Standard Python modules
+# ==============================================================================
+
+# ==============================================================================
+# External Python modules
+# ==============================================================================
 import numpy as np
 import openmdao.api as om
 from openconcept.utilities import ElementMultiplyDivideComp
+
+# ==============================================================================
+# Extension modules
+# ==============================================================================
 
 
 class HeatTransferVacuumTank(om.Group):
