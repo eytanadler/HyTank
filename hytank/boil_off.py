@@ -236,9 +236,9 @@ class BoilOff(om.Group):
         Print arbitrary text with the appropriate prefix and indentation
         for the Newton solver that belongs to this group.
         """
-        if (self.nonlinear_solver.options["iprint"] > 0 and
-                (self.nonlinear_solver._system().comm.rank == 0 or os.environ.get('USE_PROC_FILES'))):
-
+        if self.nonlinear_solver.options["iprint"] > 0 and (
+            self.nonlinear_solver._system().comm.rank == 0 or os.environ.get("USE_PROC_FILES")
+        ):
             prefix = self.nonlinear_solver._solver_info.prefix
 
             print(f"{prefix}{text}")
@@ -270,7 +270,7 @@ class BoilOff(om.Group):
         zero_resids = np.all(resids.asarray() < 1e-14)
         if norm < 1e-2 and not zero_resids:
             return
-        
+
         # Initial tank properties as specified by this group's options
         r = inputs["ode.level_calc.radius"].item()
         L = inputs["ode.level_calc.length"].item()
@@ -282,11 +282,15 @@ class BoilOff(om.Group):
         # Check that the initial temperatures are on the correct side of the saturation point
         T_sat = H2_prop.sat_gh2_T(P_gas_init)
         if T_liq_init > T_sat:
-            warnings.warn(f"Initial liquid temperature of {T_liq_init} K is above the saturation " \
-                          f"temperature of {T_sat} K. The solver is unlikely to converge under these conditions.")
+            warnings.warn(
+                f"Initial liquid temperature of {T_liq_init} K is above the saturation "
+                f"temperature of {T_sat} K. The solver is unlikely to converge under these conditions."
+            )
         if T_gas_init < T_sat:
-            warnings.warn(f"Initial ullage temperature of {T_gas_init} K is below the saturation " \
-                          f"temperature of {T_sat} K. The solver is unlikely to converge under these conditions.")
+            warnings.warn(
+                f"Initial ullage temperature of {T_gas_init} K is below the saturation "
+                f"temperature of {T_sat} K. The solver is unlikely to converge under these conditions."
+            )
 
         # Compute the initial gas mass from the given initial pressure
         V_tank = 4 / 3 * np.pi * r**3 * self.options["end_cap_depth_ratio"] + np.pi * r**2 * L
@@ -346,14 +350,16 @@ class BoilOff(om.Group):
             p = get_ode_problem(num_nodes=1)
 
             # Get initial values of the integrated states within this phase
-            u_init = np.array([
-                m_gas_init + inputs["integ.delta_m_gas_initial"].item(),
-                m_liq_init + inputs["integ.delta_m_liq_initial"].item(),
-                T_gas_init + inputs["integ.delta_T_gas_initial"].item(),
-                T_liq_init + inputs["integ.delta_T_liq_initial"].item(),
-                V_gas_init + inputs["integ.delta_V_gas_initial"].item(),
-                inputs["integ.Q_add_initial"].item(),
-            ])
+            u_init = np.array(
+                [
+                    m_gas_init + inputs["integ.delta_m_gas_initial"].item(),
+                    m_liq_init + inputs["integ.delta_m_liq_initial"].item(),
+                    T_gas_init + inputs["integ.delta_T_gas_initial"].item(),
+                    T_liq_init + inputs["integ.delta_T_liq_initial"].item(),
+                    V_gas_init + inputs["integ.delta_V_gas_initial"].item(),
+                    inputs["integ.Q_add_initial"].item(),
+                ]
+            )
 
             # Create splines for the heat and mass flow inputs so they can be
             # computed at any time within the domain
@@ -383,14 +389,16 @@ class BoilOff(om.Group):
                 p.run_model()
 
                 # Get the time derivatives of the states
-                return np.array([
-                    p.get_val("m_dot_gas", units="kg/s").item(),
-                    p.get_val("m_dot_liq", units="kg/s").item(),
-                    p.get_val("T_dot_gas", units="K/s").item(),
-                    p.get_val("T_dot_liq", units="K/s").item(),
-                    p.get_val("V_dot_gas", units="m**3/s").item(),
-                    p.get_val("Q_add_dot", units="W/s").item(),
-                ])
+                return np.array(
+                    [
+                        p.get_val("m_dot_gas", units="kg/s").item(),
+                        p.get_val("m_dot_liq", units="kg/s").item(),
+                        p.get_val("T_dot_gas", units="K/s").item(),
+                        p.get_val("T_dot_liq", units="K/s").item(),
+                        p.get_val("V_dot_gas", units="m**3/s").item(),
+                        p.get_val("Q_add_dot", units="W/s").item(),
+                    ]
+                )
 
             # Function to compute the Jacobian of the ODE (df_i / du_j)
             def jac_function(t, u):
@@ -568,6 +576,7 @@ class FullODE(om.Group):
         End cap depth divided by cylinder radius. 1 gives hemisphere, 0.5 gives 2:1 semi ellipsoid.
         Must be in the range 0-1 (inclusive). By default 1.0.
     """
+
     def initialize(self):
         self.options.declare("num_nodes", default=1, desc="Number of design points to run")
         self.options.declare(
@@ -624,14 +633,7 @@ class FullODE(om.Group):
                 "T_liq",
                 "V_gas",
             ],
-            promotes_outputs=[
-                "m_dot_gas",
-                "m_dot_liq",
-                "T_dot_gas",
-                "T_dot_liq",
-                "V_dot_gas",
-                "P_gas"
-            ],
+            promotes_outputs=["m_dot_gas", "m_dot_liq", "T_dot_gas", "T_dot_liq", "V_dot_gas", "P_gas"],
         )
         self.connect("interface_params.A_interface", "boil_off_ode.A_interface")
         self.connect("interface_params.L_interface", "boil_off_ode.L_interface")
@@ -877,10 +879,7 @@ class BoilOffGeometry(om.ExplicitComponent):
         # The linear interpolation between these two shape functions is then multiplied by the
         # surface area of an oblate spheroid. The oblate spheroid surface area expression is exact
         # for all d_end values between 0 and 1. This achieves the desired behavior.
-        A_cap_wet = A_spheroid * (
-            0.5 * (1 - np.cos(th / 2)) * d_end
-            + (th - np.sin(th)) / (2 * np.pi) * (1 - d_end)
-        )
+        A_cap_wet = A_spheroid * (0.5 * (1 - np.cos(th / 2)) * d_end + (th - np.sin(th)) / (2 * np.pi) * (1 - d_end))
 
         # Wet and dry areas
         outputs["A_wet"] = A_cap_wet + th * r * L
@@ -915,15 +914,10 @@ class BoilOffGeometry(om.ExplicitComponent):
         th_r = -2 / np.sqrt(1 - (1 - h / r) ** 2) * h / r**2
         th_h = 2 / np.sqrt(1 - (1 - h / r) ** 2) / r
 
-        Acapwet_th = A_spheroid * (
-            0.25 * np.sin(th / 2) * d_end
-            + (1 - np.cos(th)) / (2 * np.pi) * (1 - d_end)
-        )
+        Acapwet_th = A_spheroid * (0.25 * np.sin(th / 2) * d_end + (1 - np.cos(th)) / (2 * np.pi) * (1 - d_end))
 
         J["A_interface", "h_liq_frac"] = c_h * (np.pi * c / 2 * d_end + L) * 2 * r
-        J["A_interface", "radius"] = (
-            c_r * (np.pi * c / 2 * d_end + L) + J["A_interface", "h_liq_frac"] / r * h_frac
-        )
+        J["A_interface", "radius"] = c_r * (np.pi * c / 2 * d_end + L) + J["A_interface", "h_liq_frac"] / r * h_frac
         J["A_interface", "length"] = c
 
         J["L_interface", "h_liq_frac"] = c_h * 2 * r
@@ -948,7 +942,7 @@ class HeaterODE(om.ExplicitComponent):
     """
     Computes the heat input into the tank assuming a resistive heater with thermal inertia.
     The thermal inertia is captured using the following ODE:
-    
+
         dQ/dt = C (P - Q)
 
     where Q is the heat input into the tank, P is the electrical power provided to the heater,
@@ -956,7 +950,7 @@ class HeaterODE(om.ExplicitComponent):
     to the heater at a rate proportional to the difference between the two. This is roughly
     based in heat transfer physics, where the constant encapsulates the heater's mass, heat
     transfer coefficient, and other parameters.
-    
+
     Inputs
     ------
     P_heater : float
@@ -966,12 +960,12 @@ class HeaterODE(om.ExplicitComponent):
     heater_rate_const : float
         If the heater_rate_const option is set to \"input\", the constant in the ODE is provided
         as an input, otherwise this input does not exist (scalar, 1/s)
-    
+
     Outputs
     -------
     Q_add_dot : float
         Time derivative of heat added to tank (vector, W/s)
-    
+
     Options
     -------
     num_nodes : int
@@ -988,7 +982,7 @@ class HeaterODE(om.ExplicitComponent):
 
     def setup(self):
         nn = self.options["num_nodes"]
-        
+
         self.add_input("P_heater", shape=(nn,), val=0.0, units="W")
         self.add_input("Q_add", shape=(nn,), val=0.0, units="W")
         self.add_output("Q_add_dot", shape=(nn,), val=0.0, units="W/s")
@@ -1329,7 +1323,9 @@ class LH2BoilOffODE(om.ExplicitComponent):
         # Adaptively scale the sigmoid based on pressure values to
         # stretch it out so it's not so sharp.
         self.P_diff = self.options["sigmoid_fac"] * (P_gas - self.P_liq) / self.P_liq
-        self.idx_P_overflow = np.abs(self.P_diff) > self.exp_limit  # any magnitudes > 50 are limited to prevent overflows in exp
+        self.idx_P_overflow = (
+            np.abs(self.P_diff) > self.exp_limit
+        )  # any magnitudes > 50 are limited to prevent overflows in exp
         self.P_diff[self.idx_P_overflow] = self.exp_limit * np.sign(self.P_diff[self.idx_P_overflow])
         self.bulk_boil_multiplier = 1 / (1 + np.exp(self.P_diff))
 
@@ -1364,7 +1360,9 @@ class LH2BoilOffODE(om.ExplicitComponent):
         # Adaptively scale the sigmoid based on temperature values to
         # stretch it out so it's not so sharp.
         self.T_diff = self.options["sigmoid_fac"] * (T_gas - self.T_int) / self.T_int
-        self.idx_T_overflow = np.abs(self.T_diff) > self.exp_limit  # any magnitudes > 50 are limited to prevent overflows in exp
+        self.idx_T_overflow = (
+            np.abs(self.T_diff) > self.exp_limit
+        )  # any magnitudes > 50 are limited to prevent overflows in exp
         self.T_diff[self.idx_T_overflow] = self.exp_limit * np.sign(self.T_diff[self.idx_T_overflow])
         self.cloud_cond_multiplier = 1 / (1 + np.exp(self.T_diff))
 
@@ -1381,8 +1379,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
 
         # Temperature changes from added boil off mass flows
         self.T_dot_liq_incl_bbcc = self.T_dot_liq + (
-            self.P_gas * self.m_dot_bbcc / self.rho_liq
-            - self.m_dot_bbcc * (self.h_liq - self.u_liq)
+            self.P_gas * self.m_dot_bbcc / self.rho_liq - self.m_dot_bbcc * (self.h_liq - self.u_liq)
         ) / (m_liq * self.cp_liq)
         self.T_dot_gas_incl_bbcc = self.T_dot_gas + (
             -P_gas * self.m_dot_bbcc / self.rho_liq + self.m_dot_bbcc * (self.h_gas - self.u_gas)
@@ -1467,8 +1464,8 @@ class LH2BoilOffODE(om.ExplicitComponent):
         # Interface and heated boil-off effect on m_dot_boil_off
         dmg__Q_gas_int = dmg__m_dot_boil_off / (self.h_gas - self.h_liq)
         dmg__Q_add = dmg__m_dot_boil_off * heater_boil_frac / (self.h_gas - self.h_liq)
-        dmg__h_gas = -dmg__m_dot_boil_off * (self.Q_gas_int + Q_add * heater_boil_frac) / (self.h_gas - self.h_liq)**2
-        dmg__h_liq = dmg__m_dot_boil_off * (self.Q_gas_int + Q_add * heater_boil_frac) / (self.h_gas - self.h_liq)**2
+        dmg__h_gas = -dmg__m_dot_boil_off * (self.Q_gas_int + Q_add * heater_boil_frac) / (self.h_gas - self.h_liq) ** 2
+        dmg__h_liq = dmg__m_dot_boil_off * (self.Q_gas_int + Q_add * heater_boil_frac) / (self.h_gas - self.h_liq) ** 2
 
         # -------------- Derivative of Q_gas_int w.r.t. inputs --------------
         # Call the heat_transfer_coeff_gas_int variable htc. There are three components to
@@ -1496,12 +1493,24 @@ class LH2BoilOffODE(om.ExplicitComponent):
         # Nusselt number portion
         dhtc__Nu = self.k_sat_gas / L_int
 
-        # Use mask to avoid NaNs caused by 
+        # Use mask to avoid NaNs caused by
         NaN_mask = np.logical_and(self.prandtl != 0.0, self.grashof != 0.0)
         dhtc__Pr = np.zeros_like(self.prandtl)
         dhtc__Gr = np.zeros_like(self.grashof)
-        dhtc__Pr[NaN_mask] = self.n_const * self.C_const * (self.prandtl[NaN_mask] * self.grashof[NaN_mask]) ** (self.n_const - 1) * self.grashof[NaN_mask] * dhtc__Nu[NaN_mask]
-        dhtc__Gr[NaN_mask] = self.n_const * self.C_const * (self.prandtl[NaN_mask] * self.grashof[NaN_mask]) ** (self.n_const - 1) * self.prandtl[NaN_mask] * dhtc__Nu[NaN_mask]
+        dhtc__Pr[NaN_mask] = (
+            self.n_const
+            * self.C_const
+            * (self.prandtl[NaN_mask] * self.grashof[NaN_mask]) ** (self.n_const - 1)
+            * self.grashof[NaN_mask]
+            * dhtc__Nu[NaN_mask]
+        )
+        dhtc__Gr[NaN_mask] = (
+            self.n_const
+            * self.C_const
+            * (self.prandtl[NaN_mask] * self.grashof[NaN_mask]) ** (self.n_const - 1)
+            * self.prandtl[NaN_mask]
+            * dhtc__Nu[NaN_mask]
+        )
 
         dPr__T_int = (
             self.visc_sat_gas / self.k_sat_gas * self.H2.sat_gh2_cp(self.T_int, deriv=True)
@@ -1510,25 +1519,55 @@ class LH2BoilOffODE(om.ExplicitComponent):
         )
 
         dGr__T_int = (  # p(Gr)/p(beta) * p(beta)/p(T_int)
-            GRAV_CONST * self.rho_sat_gas**2 * np.abs(T_gas - self.T_int) * L_int**3 / self.visc_sat_gas**2 * self.H2.sat_gh2_beta(self.T_int, deriv=True)
+            GRAV_CONST
+            * self.rho_sat_gas**2
+            * np.abs(T_gas - self.T_int)
+            * L_int**3
+            / self.visc_sat_gas**2
+            * self.H2.sat_gh2_beta(self.T_int, deriv=True)
         )
         dGr__T_int += (  # p(Gr)/p(rho) * p(rho)/p(T_int)
-            2 * GRAV_CONST * self.beta_sat_gas * self.rho_sat_gas * np.abs(T_gas - self.T_int) * L_int**3 / self.visc_sat_gas**2 * self.H2.sat_gh2_rho(self.T_int, deriv=True)
+            2
+            * GRAV_CONST
+            * self.beta_sat_gas
+            * self.rho_sat_gas
+            * np.abs(T_gas - self.T_int)
+            * L_int**3
+            / self.visc_sat_gas**2
+            * self.H2.sat_gh2_rho(self.T_int, deriv=True)
         )
         dGr__T_int += (  # p(Gr)/p(viscosity) * p(viscosity)/p(T_int)
-            -2 * GRAV_CONST * self.beta_sat_gas * self.rho_sat_gas**2 * np.abs(T_gas - self.T_int) * L_int**3 / self.visc_sat_gas**3 * self.H2.sat_gh2_viscosity(self.T_int, deriv=True)
+            -2
+            * GRAV_CONST
+            * self.beta_sat_gas
+            * self.rho_sat_gas**2
+            * np.abs(T_gas - self.T_int)
+            * L_int**3
+            / self.visc_sat_gas**3
+            * self.H2.sat_gh2_viscosity(self.T_int, deriv=True)
         )
         abs_val_mult = np.ones(self.options["num_nodes"])  # derivative of abs(T_gas - T_int) w.r.t. T_gas
         abs_val_mult[(T_gas - self.T_int) < 0] = -1.0
         dGr__T_int += (  # p(Gr)/p(T_int)
-            GRAV_CONST * self.beta_sat_gas * self.rho_sat_gas**2 * (-abs_val_mult) * L_int**3 / self.visc_sat_gas**2
+            GRAV_CONST
+            * self.beta_sat_gas
+            * self.rho_sat_gas**2
+            * (-abs_val_mult)
+            * L_int**3
+            / self.visc_sat_gas**2
         )
 
         dGr__T_gas = (  # p(Gr)/p(T_gas)
             GRAV_CONST * self.beta_sat_gas * self.rho_sat_gas**2 * abs_val_mult * L_int**3 / self.visc_sat_gas**2
         )
         dGr__L_int = (  # p(Gr)/p(L_int)
-            3 * GRAV_CONST * self.beta_sat_gas * self.rho_sat_gas**2 * np.abs(T_gas - self.T_int) * L_int**2 / self.visc_sat_gas**2
+            3
+            * GRAV_CONST
+            * self.beta_sat_gas
+            * self.rho_sat_gas**2
+            * np.abs(T_gas - self.T_int)
+            * L_int**2
+            / self.visc_sat_gas**2
         )
 
         # Zero out anywhere the Prandtl or Grashof number is negative
@@ -1549,7 +1588,9 @@ class LH2BoilOffODE(om.ExplicitComponent):
         dQ_gas_int__htc = A_int * (T_gas - self.T_int)
         pQ_gas_int__T_int = -self.heat_transfer_coeff_gas_int * A_int  # just the partial derivative w.r.t. T_int
         dQ_gas_int__m_gas = dQ_gas_int__htc * dhtc__m_gas + pQ_gas_int__T_int * dT_int__m_gas
-        dQ_gas_int__T_gas = dQ_gas_int__htc * dhtc__T_gas + pQ_gas_int__T_int * dT_int__T_gas + self.heat_transfer_coeff_gas_int * A_int
+        dQ_gas_int__T_gas = (
+            dQ_gas_int__htc * dhtc__T_gas + pQ_gas_int__T_int * dT_int__T_gas + self.heat_transfer_coeff_gas_int * A_int
+        )
         dQ_gas_int__V_gas = dQ_gas_int__htc * dhtc__V_gas + pQ_gas_int__T_int * dT_int__V_gas
         dQ_gas_int__L_int = dQ_gas_int__htc * dhtc__L_int
         dQ_gas_int__A_int = self.heat_transfer_coeff_gas_int * (T_gas - self.T_int)
@@ -1593,7 +1634,9 @@ class LH2BoilOffODE(om.ExplicitComponent):
         J["V_dot_gas", "m_gas"] = -J["m_dot_liq", "m_gas"] / self.rho_liq
         J["V_dot_gas", "T_gas"] = -J["m_dot_liq", "T_gas"] / self.rho_liq
         J["V_dot_gas", "V_gas"] = -J["m_dot_liq", "V_gas"] / self.rho_liq
-        J["V_dot_gas", "T_liq"] = -J["m_dot_liq", "T_liq"] / self.rho_liq + self.m_dot_liq / self.rho_liq**2 * drho_liq__T_liq
+        J["V_dot_gas", "T_liq"] = (
+            -J["m_dot_liq", "T_liq"] / self.rho_liq + self.m_dot_liq / self.rho_liq**2 * drho_liq__T_liq
+        )
         J["V_dot_gas", "Q_add"] = -J["m_dot_liq", "Q_add"] / self.rho_liq
         J["V_dot_gas", "L_interface"] = -J["m_dot_liq", "L_interface"] / self.rho_liq
         J["V_dot_gas", "A_interface"] = -J["m_dot_liq", "A_interface"] / self.rho_liq
@@ -1678,7 +1721,6 @@ class LH2BoilOffODE(om.ExplicitComponent):
         J["T_dot_liq", "T_gas"] = dT_dot_liq__P_gas * dP_gas__T_gas
         J["T_dot_liq", "V_gas"] = dT_dot_liq__P_gas * dP_gas__V_gas
 
-
         # Derivatives originating from partial w.r.t. V_dot_liq
         dT_dot_liq__V_dot_liq = -self.P_gas / (m_liq * self.cp_liq)
         J["T_dot_liq", "m_gas"] += dT_dot_liq__V_dot_liq * (-J["V_dot_gas", "m_gas"])
@@ -1726,9 +1768,9 @@ class LH2BoilOffODE(om.ExplicitComponent):
         dm_dot_bbcc__bb_mult = self.m_dot_bulk_boil
         dm_dot_bbcc__m_dot_cc = -self.cloud_cond_multiplier
         dm_dot_bbcc__cc_mult = -self.m_dot_cloud_cond
-        
+
         # Derivative of the sigmoids w.r.t. inputs
-        dbb_mult__P_diff = -1 / (1 + np.exp(self.P_diff))**2 * np.exp(self.P_diff)
+        dbb_mult__P_diff = -1 / (1 + np.exp(self.P_diff)) ** 2 * np.exp(self.P_diff)
         dbb_mult__P_liq = dbb_mult__P_diff * self.options["sigmoid_fac"] * (-self.P_gas / self.P_liq**2)
         dbb_mult__P_gas = dbb_mult__P_diff * self.options["sigmoid_fac"] / self.P_liq
         dbb_mult__P_liq[self.idx_P_overflow] = 0.0  # account for the exponentiation overflow protection
@@ -1738,7 +1780,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
         dbb_mult__V_gas = dbb_mult__P_gas * dP_gas__V_gas
         dbb_mult__T_liq = dbb_mult__P_liq * self.H2.lh2_P(T_liq, deriv=True)
 
-        dcc_mult__T_diff = -1 / (1 + np.exp(self.T_diff))**2 * np.exp(self.T_diff)
+        dcc_mult__T_diff = -1 / (1 + np.exp(self.T_diff)) ** 2 * np.exp(self.T_diff)
         dcc_mult__T_int = dcc_mult__T_diff * self.options["sigmoid_fac"] * (-T_gas / self.T_int**2)
         dcc_mult__T_gas = dcc_mult__T_diff * self.options["sigmoid_fac"] / self.T_int + dcc_mult__T_int * dT_int__T_gas
         dcc_mult__T_int[self.idx_T_overflow] = 0.0  # account for the exponentiation overflow protection
@@ -1776,10 +1818,9 @@ class LH2BoilOffODE(om.ExplicitComponent):
             + dm_dot_bb__m_dot_gas * J["m_dot_gas", "m_gas"]
             + dm_dot_bb__T_dot_gas * J["T_dot_gas", "m_gas"]
             + dm_dot_bb__V_dot_gas * J["V_dot_gas", "m_gas"]
-            + m_dot_bb_coeff * (-UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2) * (
-                self.T_dot_gas / V_gas
-                - T_gas * self.V_dot_gas / V_gas**2
-            )
+            + m_dot_bb_coeff
+            * (-UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2)
+            * (self.T_dot_gas / V_gas - T_gas * self.V_dot_gas / V_gas**2)
         )
         dm_dot_bb__T_gas = (
             dm_dot_bb__T_dot_liq * J["T_dot_liq", "T_gas"]
@@ -1787,10 +1828,9 @@ class LH2BoilOffODE(om.ExplicitComponent):
             + dm_dot_bb__T_dot_gas * J["T_dot_gas", "T_gas"]
             + dm_dot_bb__V_dot_gas * J["V_dot_gas", "T_gas"]
             - self.m_dot_bulk_boil / T_gas  # first product rule term
-            + m_dot_bb_coeff * (-UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2) * (  # second product rule term
-                self.m_dot_gas / V_gas
-                - m_gas * self.V_dot_gas / V_gas**2
-            )
+            + m_dot_bb_coeff
+            * (-UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2)
+            * (self.m_dot_gas / V_gas - m_gas * self.V_dot_gas / V_gas**2)  # second product rule term
         )
         dm_dot_bb__V_gas = (
             dm_dot_bb__T_dot_liq * J["T_dot_liq", "V_gas"]
@@ -1798,11 +1838,13 @@ class LH2BoilOffODE(om.ExplicitComponent):
             + dm_dot_bb__T_dot_gas * J["T_dot_gas", "V_gas"]
             + dm_dot_bb__V_dot_gas * J["V_dot_gas", "V_gas"]
             + self.m_dot_bulk_boil / V_gas  # first product rule term
-            + m_dot_bb_coeff * (-UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2) * (  # second product rule term
+            + m_dot_bb_coeff
+            * (-UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2)
+            * (
                 -self.m_dot_gas * T_gas / V_gas**2
                 - m_gas * self.T_dot_gas / V_gas**2
                 + 2 * m_gas * T_gas * self.V_dot_gas / V_gas**3
-            )
+            )  # second product rule term
         )
         dm_dot_bb__T_liq = (
             dm_dot_bb__T_dot_liq * J["T_dot_liq", "T_liq"]
@@ -1814,27 +1856,38 @@ class LH2BoilOffODE(om.ExplicitComponent):
         dm_dot_bb__m_liq = dm_dot_bb__T_dot_liq * J["T_dot_liq", "m_liq"]
         dm_dot_bb__Q_liq = dm_dot_bb__T_dot_liq * J["T_dot_liq", "Q_liq"]
         dm_dot_bb__Q_gas = dm_dot_bb__T_dot_gas * J["T_dot_gas", "Q_gas"]
-        dm_dot_bb__m_dot_gas_out = dm_dot_bb__m_dot_gas * J["m_dot_gas", "m_dot_gas_out"] + dm_dot_bb__T_dot_gas * J["T_dot_gas", "m_dot_gas_out"]
-        dm_dot_bb__m_dot_liq_out = dm_dot_bb__V_dot_gas * J["V_dot_gas", "m_dot_liq_out"] + dm_dot_bb__T_dot_liq * J["T_dot_liq", "m_dot_liq_out"] + dm_dot_bb__T_dot_gas * J["T_dot_gas", "m_dot_liq_out"]
+        dm_dot_bb__m_dot_gas_out = (
+            dm_dot_bb__m_dot_gas * J["m_dot_gas", "m_dot_gas_out"]
+            + dm_dot_bb__T_dot_gas * J["T_dot_gas", "m_dot_gas_out"]
+        )
+        dm_dot_bb__m_dot_liq_out = (
+            dm_dot_bb__V_dot_gas * J["V_dot_gas", "m_dot_liq_out"]
+            + dm_dot_bb__T_dot_liq * J["T_dot_liq", "m_dot_liq_out"]
+            + dm_dot_bb__T_dot_gas * J["T_dot_gas", "m_dot_liq_out"]
+        )
 
         # Derivative of m_dot_cloud_cond w.r.t. inputs
         m_dot_cc_coeff = self.m_dot_cc_sign * self.P_gas * V_gas * MOLEC_WEIGHT_H2 / (UNIVERSAL_GAS_CONST * T_gas**2)
-        dm_dot_cc__P_gas = (
-            self.m_dot_cloud_cond / self.P_gas  # first product rule term
-            + m_dot_cc_coeff * (  # second product rule term
-                self.H2.sat_gh2_T(self.P_gas, deriv=2)
-                * UNIVERSAL_GAS_CONST
-                / MOLEC_WEIGHT_H2
-                * (
-                    self.m_dot_gas * T_gas / V_gas
-                    + m_gas * self.T_dot_gas / V_gas
-                    - m_gas * T_gas * self.V_dot_gas / V_gas**2
-                )
+        #                  first product rule term
+        dm_dot_cc__P_gas = self.m_dot_cloud_cond / self.P_gas + m_dot_cc_coeff * (
+            self.H2.sat_gh2_T(self.P_gas, deriv=2)
+            * UNIVERSAL_GAS_CONST
+            / MOLEC_WEIGHT_H2
+            * (
+                self.m_dot_gas * T_gas / V_gas
+                + m_gas * self.T_dot_gas / V_gas
+                - m_gas * T_gas * self.V_dot_gas / V_gas**2
             )
+        )  # second product rule term
+        dm_dot_cc__m_dot_gas = (
+            m_dot_cc_coeff * self.d_T_sat_g_d_P * UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2 * T_gas / V_gas
         )
-        dm_dot_cc__m_dot_gas = m_dot_cc_coeff * self.d_T_sat_g_d_P * UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2 * T_gas / V_gas
-        dm_dot_cc__T_dot_gas = m_dot_cc_coeff * (self.d_T_sat_g_d_P * UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2 * m_gas / V_gas - 1)
-        dm_dot_cc__V_dot_gas = m_dot_cc_coeff * self.d_T_sat_g_d_P * UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2 * (-m_gas * T_gas / V_gas**2)
+        dm_dot_cc__T_dot_gas = m_dot_cc_coeff * (
+            self.d_T_sat_g_d_P * UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2 * m_gas / V_gas - 1
+        )
+        dm_dot_cc__V_dot_gas = (
+            m_dot_cc_coeff * self.d_T_sat_g_d_P * UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2 * (-m_gas * T_gas / V_gas**2)
+        )
 
         dm_dot_cc__Q_add = (
             dm_dot_cc__m_dot_gas * J["m_dot_gas", "Q_add"]
@@ -1851,15 +1904,17 @@ class LH2BoilOffODE(om.ExplicitComponent):
             + dm_dot_cc__V_dot_gas * J["V_dot_gas", "L_interface"]
             + dm_dot_cc__T_dot_gas * J["T_dot_gas", "L_interface"]
         )
-        dm_dot_cc__T_gas =(
+        dm_dot_cc__T_gas = (
             dm_dot_cc__m_dot_gas * J["m_dot_gas", "T_gas"]
             + dm_dot_cc__V_dot_gas * J["V_dot_gas", "T_gas"]
             + dm_dot_cc__T_dot_gas * J["T_dot_gas", "T_gas"]
             + dm_dot_cc__P_gas * J["P_gas", "T_gas"]
             - 2 * self.m_dot_cloud_cond / T_gas  # first product rule term
-            + m_dot_cc_coeff * self.d_T_sat_g_d_P * UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2 * (
-                self.m_dot_gas / V_gas - m_gas * self.V_dot_gas / V_gas**2
-            )  # second product rule term
+            + m_dot_cc_coeff
+            * self.d_T_sat_g_d_P
+            * UNIVERSAL_GAS_CONST
+            / MOLEC_WEIGHT_H2
+            * (self.m_dot_gas / V_gas - m_gas * self.V_dot_gas / V_gas**2)  # second product rule term
         )
         dm_dot_cc__T_liq = (
             dm_dot_cc__m_dot_gas * J["m_dot_gas", "T_liq"]
@@ -1872,7 +1927,11 @@ class LH2BoilOffODE(om.ExplicitComponent):
             + dm_dot_cc__T_dot_gas * J["T_dot_gas", "V_gas"]
             + dm_dot_cc__P_gas * J["P_gas", "V_gas"]
             + self.m_dot_cloud_cond / V_gas  # first product rule term
-            + m_dot_cc_coeff * self.d_T_sat_g_d_P * UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2 * (
+            + m_dot_cc_coeff
+            * self.d_T_sat_g_d_P
+            * UNIVERSAL_GAS_CONST
+            / MOLEC_WEIGHT_H2
+            * (
                 -self.m_dot_gas * T_gas / V_gas**2
                 - m_gas * self.T_dot_gas / V_gas**2
                 + 2 * m_gas * T_gas * self.V_dot_gas / V_gas**3
@@ -1891,9 +1950,11 @@ class LH2BoilOffODE(om.ExplicitComponent):
             + dm_dot_cc__V_dot_gas * J["V_dot_gas", "m_gas"]
             + dm_dot_cc__T_dot_gas * J["T_dot_gas", "m_gas"]
             + dm_dot_cc__P_gas * J["P_gas", "m_gas"]
-            + m_dot_cc_coeff * self.d_T_sat_g_d_P * UNIVERSAL_GAS_CONST / MOLEC_WEIGHT_H2 * (
-                self.T_dot_gas / V_gas - T_gas * self.V_dot_gas / V_gas**2
-            )
+            + m_dot_cc_coeff
+            * self.d_T_sat_g_d_P
+            * UNIVERSAL_GAS_CONST
+            / MOLEC_WEIGHT_H2
+            * (self.T_dot_gas / V_gas - T_gas * self.V_dot_gas / V_gas**2)
         )
         dm_dot_cc__Q_gas = dm_dot_cc__T_dot_gas * J["T_dot_gas", "Q_gas"]
 
@@ -1909,16 +1970,13 @@ class LH2BoilOffODE(om.ExplicitComponent):
             elif key == "V_dot_gas":
                 scaler = 1 / self.rho_liq
             J[key, "Q_add"] += scaler * (
-                dm_dot_bbcc__m_dot_bb * dm_dot_bb__Q_add
-                + dm_dot_bbcc__m_dot_cc * dm_dot_cc__Q_add
+                dm_dot_bbcc__m_dot_bb * dm_dot_bb__Q_add + dm_dot_bbcc__m_dot_cc * dm_dot_cc__Q_add
             )
             J[key, "A_interface"] += scaler * (
-                dm_dot_bbcc__m_dot_bb * dm_dot_bb__A_interface
-                + dm_dot_bbcc__m_dot_cc * dm_dot_cc__A_interface
+                dm_dot_bbcc__m_dot_bb * dm_dot_bb__A_interface + dm_dot_bbcc__m_dot_cc * dm_dot_cc__A_interface
             )
             J[key, "L_interface"] += scaler * (
-                dm_dot_bbcc__m_dot_bb * dm_dot_bb__L_interface
-                + dm_dot_bbcc__m_dot_cc * dm_dot_cc__L_interface
+                dm_dot_bbcc__m_dot_bb * dm_dot_bb__L_interface + dm_dot_bbcc__m_dot_cc * dm_dot_cc__L_interface
             )
             J[key, "m_gas"] += scaler * (
                 dm_dot_bbcc__bb_mult * dbb_mult__m_gas
@@ -1946,18 +2004,15 @@ class LH2BoilOffODE(om.ExplicitComponent):
             J[key, "m_liq"] += scaler * dm_dot_bbcc__m_dot_bb * dm_dot_bb__m_liq
             J[key, "Q_liq"] += scaler * dm_dot_bbcc__m_dot_bb * dm_dot_bb__Q_liq
             J[key, "Q_gas"] += scaler * (
-                dm_dot_bbcc__m_dot_bb * dm_dot_bb__Q_gas
-                + dm_dot_bbcc__m_dot_cc * dm_dot_cc__Q_gas
+                dm_dot_bbcc__m_dot_bb * dm_dot_bb__Q_gas + dm_dot_bbcc__m_dot_cc * dm_dot_cc__Q_gas
             )
             J[key, "m_dot_gas_out"] += scaler * (
-                dm_dot_bbcc__m_dot_bb * dm_dot_bb__m_dot_gas_out
-                + dm_dot_bbcc__m_dot_cc * dm_dot_cc__m_dot_gas_out
+                dm_dot_bbcc__m_dot_bb * dm_dot_bb__m_dot_gas_out + dm_dot_bbcc__m_dot_cc * dm_dot_cc__m_dot_gas_out
             )
             J[key, "m_dot_liq_out"] += scaler * (
-                dm_dot_bbcc__m_dot_bb * dm_dot_bb__m_dot_liq_out
-                + dm_dot_bbcc__m_dot_cc * dm_dot_cc__m_dot_liq_out
+                dm_dot_bbcc__m_dot_bb * dm_dot_bb__m_dot_liq_out + dm_dot_bbcc__m_dot_cc * dm_dot_cc__m_dot_liq_out
             )
-        
+
         # V_dot_gas addition also is affected by T_liq influence on rho_liq
         J["V_dot_gas", "T_liq"] += -self.m_dot_bbcc / self.rho_liq**2 * drho_liq__T_liq
 
@@ -1985,25 +2040,26 @@ class LH2BoilOffODE(om.ExplicitComponent):
                 coeff_dQ__mult = (self.h_gas - self.h_liq) * self.m_dot_cloud_cond / (m_gas * self.cv_gas)
 
             J[key, "Q_add"] += coeff * (
-                dm_dot_bbcc__m_dot_bb * dm_dot_bb__Q_add
-                + dm_dot_bbcc__m_dot_cc * dm_dot_cc__Q_add
+                dm_dot_bbcc__m_dot_bb * dm_dot_bb__Q_add + dm_dot_bbcc__m_dot_cc * dm_dot_cc__Q_add
             )
-            J[key, "Q_add"] += (  # influence on heat flows from bulk boiling or cloud condensation
-                coeff_dQ__m_dot * (dm_dot_bb__Q_add if key == "T_dot_liq" else dm_dot_cc__Q_add)
+            J[key, "Q_add"] += coeff_dQ__m_dot * (  # influence on heat flows from bulk boiling or cloud condensation
+                dm_dot_bb__Q_add if key == "T_dot_liq" else dm_dot_cc__Q_add
             )
             J[key, "A_interface"] += coeff * (
-                dm_dot_bbcc__m_dot_bb * dm_dot_bb__A_interface
-                + dm_dot_bbcc__m_dot_cc * dm_dot_cc__A_interface
+                dm_dot_bbcc__m_dot_bb * dm_dot_bb__A_interface + dm_dot_bbcc__m_dot_cc * dm_dot_cc__A_interface
             )
-            J[key, "A_interface"] += (  # influence on heat flows from bulk boiling or cloud condensation
-                coeff_dQ__m_dot * (dm_dot_bb__A_interface if key == "T_dot_liq" else dm_dot_cc__A_interface)
+            J[
+                key, "A_interface"
+            ] += coeff_dQ__m_dot * (  # influence on heat flows from bulk boiling or cloud condensation
+                dm_dot_bb__A_interface if key == "T_dot_liq" else dm_dot_cc__A_interface
             )
             J[key, "L_interface"] += coeff * (
-                dm_dot_bbcc__m_dot_bb * dm_dot_bb__L_interface
-                + dm_dot_bbcc__m_dot_cc * dm_dot_cc__L_interface
+                dm_dot_bbcc__m_dot_bb * dm_dot_bb__L_interface + dm_dot_bbcc__m_dot_cc * dm_dot_cc__L_interface
             )
-            J[key, "L_interface"] += (  # influence on heat flows from bulk boiling or cloud condensation
-                coeff_dQ__m_dot * (dm_dot_bb__L_interface if key == "T_dot_liq" else dm_dot_cc__L_interface)
+            J[
+                key, "L_interface"
+            ] += coeff_dQ__m_dot * (  # influence on heat flows from bulk boiling or cloud condensation
+                dm_dot_bb__L_interface if key == "T_dot_liq" else dm_dot_cc__L_interface
             )
             J[key, "m_gas"] += coeff * (
                 dm_dot_bbcc__bb_mult * dbb_mult__m_gas
@@ -2011,67 +2067,64 @@ class LH2BoilOffODE(om.ExplicitComponent):
                 + dm_dot_bbcc__m_dot_bb * dm_dot_bb__m_gas
                 + dm_dot_bbcc__m_dot_cc * dm_dot_cc__m_gas
             )
-            J[key, "m_gas"] += (  # influence on heat flows from bulk boiling or cloud condensation
-                coeff_dQ__m_dot * (dm_dot_bb__m_gas if key == "T_dot_liq" else dm_dot_cc__m_gas)
-                + coeff_dQ__mult * (dbb_mult__m_gas if key == "T_dot_liq" else dcc_mult__m_gas)
-            )
+            J[key, "m_gas"] += coeff_dQ__m_dot * (  # influence on heat flows from bulk boiling or cloud condensation
+                dm_dot_bb__m_gas if key == "T_dot_liq" else dm_dot_cc__m_gas
+            ) + coeff_dQ__mult * (dbb_mult__m_gas if key == "T_dot_liq" else dcc_mult__m_gas)
             J[key, "T_gas"] += coeff * (
                 dm_dot_bbcc__bb_mult * dbb_mult__T_gas
                 + dm_dot_bbcc__cc_mult * dcc_mult__T_gas
                 + dm_dot_bbcc__m_dot_bb * dm_dot_bb__T_gas
                 + dm_dot_bbcc__m_dot_cc * dm_dot_cc__T_gas
             )
-            J[key, "T_gas"] += (  # influence on heat flows from bulk boiling or cloud condensation
-                coeff_dQ__m_dot * (dm_dot_bb__T_gas if key == "T_dot_liq" else dm_dot_cc__T_gas)
-                + coeff_dQ__mult * (dbb_mult__T_gas if key == "T_dot_liq" else dcc_mult__T_gas)
-            )
+            J[key, "T_gas"] += coeff_dQ__m_dot * (  # influence on heat flows from bulk boiling or cloud condensation
+                dm_dot_bb__T_gas if key == "T_dot_liq" else dm_dot_cc__T_gas
+            ) + coeff_dQ__mult * (dbb_mult__T_gas if key == "T_dot_liq" else dcc_mult__T_gas)
             J[key, "V_gas"] += coeff * (
                 dm_dot_bbcc__bb_mult * dbb_mult__V_gas
                 + dm_dot_bbcc__cc_mult * dcc_mult__V_gas
                 + dm_dot_bbcc__m_dot_bb * dm_dot_bb__V_gas
                 + dm_dot_bbcc__m_dot_cc * dm_dot_cc__V_gas
             )
-            J[key, "V_gas"] += (  # influence on heat flows from bulk boiling or cloud condensation
-                coeff_dQ__m_dot * (dm_dot_bb__V_gas if key == "T_dot_liq" else dm_dot_cc__V_gas)
-                + coeff_dQ__mult * (dbb_mult__V_gas if key == "T_dot_liq" else dcc_mult__V_gas)
-            )
+            J[key, "V_gas"] += coeff_dQ__m_dot * (  # influence on heat flows from bulk boiling or cloud condensation
+                dm_dot_bb__V_gas if key == "T_dot_liq" else dm_dot_cc__V_gas
+            ) + coeff_dQ__mult * (dbb_mult__V_gas if key == "T_dot_liq" else dcc_mult__V_gas)
             J[key, "T_liq"] += coeff * (
                 dm_dot_bbcc__bb_mult * dbb_mult__T_liq
                 + dm_dot_bbcc__m_dot_bb * dm_dot_bb__T_liq
                 + dm_dot_bbcc__m_dot_cc * dm_dot_cc__T_liq
             )
-            J[key, "T_liq"] += (  # influence on heat flows from bulk boiling or cloud condensation
-                coeff_dQ__m_dot * (dm_dot_bb__T_liq if key == "T_dot_liq" else dm_dot_cc__T_liq)
-                + coeff_dQ__mult * (dbb_mult__T_liq if key == "T_dot_liq" else 0.0)
-            )
+            J[key, "T_liq"] += coeff_dQ__m_dot * (  # influence on heat flows from bulk boiling or cloud condensation
+                dm_dot_bb__T_liq if key == "T_dot_liq" else dm_dot_cc__T_liq
+            ) + coeff_dQ__mult * (dbb_mult__T_liq if key == "T_dot_liq" else 0.0)
             J[key, "m_liq"] += coeff * dm_dot_bbcc__m_dot_bb * dm_dot_bb__m_liq
-            J[key, "m_liq"] += (  # influence on heat flows from bulk boiling or cloud condensation
-                coeff_dQ__m_dot * (dm_dot_bb__m_liq if key == "T_dot_liq" else 0.0)
+            J[key, "m_liq"] += coeff_dQ__m_dot * (  # influence on heat flows from bulk boiling or cloud condensation
+                dm_dot_bb__m_liq if key == "T_dot_liq" else 0.0
             )
             J[key, "Q_liq"] += coeff * dm_dot_bbcc__m_dot_bb * dm_dot_bb__Q_liq
-            J[key, "Q_liq"] += (  # influence on heat flows from bulk boiling or cloud condensation
-                coeff_dQ__m_dot * (dm_dot_bb__Q_liq if key == "T_dot_liq" else 0.0)
+            J[key, "Q_liq"] += coeff_dQ__m_dot * (  # influence on heat flows from bulk boiling or cloud condensation
+                dm_dot_bb__Q_liq if key == "T_dot_liq" else 0.0
             )
             J[key, "Q_gas"] += coeff * (
-                dm_dot_bbcc__m_dot_bb * dm_dot_bb__Q_gas
-                + dm_dot_bbcc__m_dot_cc * dm_dot_cc__Q_gas
+                dm_dot_bbcc__m_dot_bb * dm_dot_bb__Q_gas + dm_dot_bbcc__m_dot_cc * dm_dot_cc__Q_gas
             )
-            J[key, "Q_gas"] += (  # influence on heat flows from bulk boiling or cloud condensation
-                coeff_dQ__m_dot * (dm_dot_bb__Q_gas if key == "T_dot_liq" else dm_dot_cc__Q_gas)
+            J[key, "Q_gas"] += coeff_dQ__m_dot * (  # influence on heat flows from bulk boiling or cloud condensation
+                dm_dot_bb__Q_gas if key == "T_dot_liq" else dm_dot_cc__Q_gas
             )
             J[key, "m_dot_gas_out"] += coeff * (
-                dm_dot_bbcc__m_dot_bb * dm_dot_bb__m_dot_gas_out
-                + dm_dot_bbcc__m_dot_cc * dm_dot_cc__m_dot_gas_out
+                dm_dot_bbcc__m_dot_bb * dm_dot_bb__m_dot_gas_out + dm_dot_bbcc__m_dot_cc * dm_dot_cc__m_dot_gas_out
             )
-            J[key, "m_dot_gas_out"] += (  # influence on heat flows from bulk boiling or cloud condensation
-                coeff_dQ__m_dot * (dm_dot_bb__m_dot_gas_out if key == "T_dot_liq" else dm_dot_cc__m_dot_gas_out)
+            J[
+                key, "m_dot_gas_out"
+            ] += coeff_dQ__m_dot * (  # influence on heat flows from bulk boiling or cloud condensation
+                dm_dot_bb__m_dot_gas_out if key == "T_dot_liq" else dm_dot_cc__m_dot_gas_out
             )
             J[key, "m_dot_liq_out"] += coeff * (
-                dm_dot_bbcc__m_dot_bb * dm_dot_bb__m_dot_liq_out
-                + dm_dot_bbcc__m_dot_cc * dm_dot_cc__m_dot_liq_out
+                dm_dot_bbcc__m_dot_bb * dm_dot_bb__m_dot_liq_out + dm_dot_bbcc__m_dot_cc * dm_dot_cc__m_dot_liq_out
             )
-            J[key, "m_dot_liq_out"] += (  # influence on heat flows from bulk boiling or cloud condensation
-                coeff_dQ__m_dot * (dm_dot_bb__m_dot_liq_out if key == "T_dot_liq" else dm_dot_cc__m_dot_liq_out)
+            J[
+                key, "m_dot_liq_out"
+            ] += coeff_dQ__m_dot * (  # influence on heat flows from bulk boiling or cloud condensation
+                dm_dot_bb__m_dot_liq_out if key == "T_dot_liq" else dm_dot_cc__m_dot_liq_out
             )
 
         # Include the influence from the other terms in Q_liq_bulk_boil and Q_gas_cloud_cond
@@ -2080,29 +2133,30 @@ class LH2BoilOffODE(om.ExplicitComponent):
         J["T_dot_liq", "V_gas"] += dT_dot_liq_bb__h_gas * dh_gas__P_gas * J["P_gas", "V_gas"]
         J["T_dot_liq", "T_gas"] += dT_dot_liq_bb__h_gas * (dh_gas__T_gas + dh_gas__P_gas * J["P_gas", "T_gas"])
         J["T_dot_liq", "T_liq"] += (
-            self.m_dot_bbcc * (
-                -self.P_gas / self.rho_liq**2 * drho_liq__T_liq
-                - (dh_liq__T_liq - du_liq__T_liq)
-            ) / (m_liq * self.cp_liq)
-            - self.m_dot_bbcc * (self.P_gas / self.rho_liq - (self.h_liq - self.u_liq))
-            / (m_liq * self.cp_liq)**2 * m_liq * dcp_liq__T_liq
+            self.m_dot_bbcc
+            * (-self.P_gas / self.rho_liq**2 * drho_liq__T_liq - (dh_liq__T_liq - du_liq__T_liq))
+            / (m_liq * self.cp_liq)
+            - self.m_dot_bbcc
+            * (self.P_gas / self.rho_liq - (self.h_liq - self.u_liq))
+            / (m_liq * self.cp_liq) ** 2
+            * m_liq
+            * dcp_liq__T_liq
             + dh_liq__T_liq * self.m_dot_bulk_boil * self.bulk_boil_multiplier / (m_liq * self.cp_liq)
-            - self.Q_liq_bulk_boil / (m_liq * self.cp_liq)**2 * m_liq * dcp_liq__T_liq
+            - self.Q_liq_bulk_boil / (m_liq * self.cp_liq) ** 2 * m_liq * dcp_liq__T_liq
         )
-        J["T_dot_liq", "m_liq"] += (
-            -(
-                self.Q_liq_bulk_boil
-                + self.P_gas * self.m_dot_bbcc / self.rho_liq
-                - self.m_dot_bbcc * (self.h_liq - self.u_liq)
-            )
-            / (m_liq**2 * self.cp_liq)
-        )
+        J["T_dot_liq", "m_liq"] += -(
+            self.Q_liq_bulk_boil
+            + self.P_gas * self.m_dot_bbcc / self.rho_liq
+            - self.m_dot_bbcc * (self.h_liq - self.u_liq)
+        ) / (m_liq**2 * self.cp_liq)
 
         # Influence from P_gas in the PdV term of the liquid temperature change caused by the
         # added mass flow from bulk boiling and cloud condensation
         for wrt in ["m_gas", "T_gas", "V_gas"]:
             J["T_dot_liq", wrt] += J["P_gas", wrt] * self.m_dot_bbcc / self.rho_liq / (m_liq * self.cp_liq)
 
+        # The black formatter totally butchers this section, so turn it off temporarily
+        # fmt: off
         J["T_dot_gas", "m_gas"] += (
             self.m_dot_bbcc * J["P_gas", "m_gas"] * (-1 / self.rho_liq + dh_gas__P_gas - du_gas__P_gas) / (m_gas * self.cv_gas)
             - self.m_dot_bbcc * (-self.P_gas / self.rho_liq + (self.h_gas - self.u_gas)) / (m_gas * self.cv_gas)**2
@@ -2128,6 +2182,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
             self.P_gas * self.m_dot_bbcc / self.rho_liq**2 * drho_liq__T_liq
             - dh_liq__T_liq * self.m_dot_cloud_cond * self.cloud_cond_multiplier
         ) / (m_gas * self.cv_gas)
+        # fmt: on
 
 
 class BoilOffFillLevelCalc(om.ExplicitComponent):
@@ -2190,7 +2245,9 @@ class BoilOffFillLevelCalc(om.ExplicitComponent):
         V_tank = 4 / 3 * np.pi * r**3 * self.options["end_cap_depth_ratio"] + np.pi * r**2 * L
         J["fill_level", "V_gas"] = -1 / V_tank
         J["fill_level", "radius"] = (
-            inputs["V_gas"] / V_tank**2 * (4 * np.pi * r**2 * self.options["end_cap_depth_ratio"] + 2 * np.pi * r * L)
+            inputs["V_gas"]
+            / V_tank**2
+            * (4 * np.pi * r**2 * self.options["end_cap_depth_ratio"] + 2 * np.pi * r * L)
         )
         J["fill_level", "length"] = inputs["V_gas"] / V_tank**2 * (np.pi * r**2)
 

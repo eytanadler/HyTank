@@ -32,11 +32,12 @@ class HydrogenProperties:
     real_gas_property_surrogate_models.pkl and saturated_property_surrogate_models.pkl.
     To regenerate the surrogate models, delete these two files and they will be automatically
     recreated when this class is initialized.
-    
+
     The surrogates use SciPy's CubicSpline for the saturated property estimates and
     the CloughTocher2DInterpolator for the real gas properties. CubicSpline provides
     analytic derivatives, while the CloughTocher2DInterpolator is finite differenced.
     """
+
     def __init__(self, print_output=False):
         self._print_output = print_output
 
@@ -61,26 +62,43 @@ class HydrogenProperties:
             self.sat_surrogates = {
                 "lh2_P": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Pressure (MPa)") * 1e6},
                 "lh2_h": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Enthalpy (l, kJ/kg)") * 1e3},
-                "lh2_u": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Internal Energy (l, kJ/kg)") * 1e3},
+                "lh2_u": {
+                    "x": get_sat_property("Temperature (K)"),
+                    "y": get_sat_property("Internal Energy (l, kJ/kg)") * 1e3,
+                },
                 "lh2_cp": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Cp (l, J/g*K)") * 1e3},
                 "lh2_rho": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Density (l, kg/m3)")},
                 "sat_gh2_rho": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Density (v, kg/m3)")},
-                "sat_gh2_h": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Enthalpy (v, kJ/kg)") * 1e3},
+                "sat_gh2_h": {
+                    "x": get_sat_property("Temperature (K)"),
+                    "y": get_sat_property("Enthalpy (v, kJ/kg)") * 1e3,
+                },
                 "sat_gh2_cp": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Cp (v, J/g*K)") * 1e3},
-                "sat_gh2_k": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Therm. Cond. (v, W/m*K)")},
-                "sat_gh2_viscosity": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Viscosity (v, Pa*s)")},
-                "sat_gh2_beta": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Thermal Expansion Coefficient (v, 1/K)")},
+                "sat_gh2_k": {
+                    "x": get_sat_property("Temperature (K)"),
+                    "y": get_sat_property("Therm. Cond. (v, W/m*K)"),
+                },
+                "sat_gh2_viscosity": {
+                    "x": get_sat_property("Temperature (K)"),
+                    "y": get_sat_property("Viscosity (v, Pa*s)"),
+                },
+                "sat_gh2_beta": {
+                    "x": get_sat_property("Temperature (K)"),
+                    "y": get_sat_property("Thermal Expansion Coefficient (v, 1/K)"),
+                },
                 "sat_gh2_T": {"x": get_sat_property("Pressure (MPa)") * 1e6, "y": get_sat_property("Temperature (K)")},
             }
 
             for key, val in self.sat_surrogates.items():
                 self.sat_surrogates[key]["surrogate"] = interp.CubicSpline(val["x"], val["y"], extrapolate=True)
                 self.sat_surrogates[key]["surrogate_deriv"] = self.sat_surrogates[key]["surrogate"].derivative()
-                self.sat_surrogates[key]["surrogate_second_deriv"] = self.sat_surrogates[key]["surrogate_deriv"].derivative()
-            
+                self.sat_surrogates[key]["surrogate_second_deriv"] = self.sat_surrogates[key][
+                    "surrogate_deriv"
+                ].derivative()
+
             if self._print_output:
                 print(f"done in {time() - t_start} sec")
-            
+
             # Dump the surrogate model
             t_start = time()
             with open(sat_dump_file, "wb") as f:
@@ -125,7 +143,9 @@ class HydrogenProperties:
 
             self.gas_surrogates = {}
             for k, v in surr_keys.items():
-                self.gas_surrogates[k] = interp.CloughTocher2DInterpolator(np.vstack((vals[v[0]], vals[v[1]])).T, vals[k])
+                self.gas_surrogates[k] = interp.CloughTocher2DInterpolator(
+                    np.vstack((vals[v[0]], vals[v[1]])).T, vals[k]
+                )
 
             if self._print_output:
                 print(f"done in {time() - t_start} sec")
@@ -309,7 +329,6 @@ class HydrogenProperties:
 
         return self._eval_surrogate("cp", np.vstack((P, T)).T, deriv=deriv)
 
-
     def gh2_u(self, P, T, deriv=False):
         """
         Compute internal energy of hydrogen gas.
@@ -340,7 +359,6 @@ class HydrogenProperties:
             raise ValueError("Pressure and temperature must have the same shape if they are both numpy arrays")
 
         return self._eval_surrogate("u", np.vstack((P, T)).T, deriv=deriv)
-
 
     def gh2_h(self, P, T, deriv=False):
         """
@@ -373,7 +391,6 @@ class HydrogenProperties:
 
         return self._eval_surrogate("h", np.vstack((P, T)).T, deriv=deriv)
 
-
     def lh2_P(self, T, deriv=False):
         """
         Pressure of saturated liquid hydrogen.
@@ -398,7 +415,6 @@ class HydrogenProperties:
         """
         return self._eval_surrogate("lh2_P", T, deriv=deriv)
 
-
     def lh2_h(self, T, deriv=False):
         """
         Enthalpy of saturated liquid hydrogen.
@@ -421,7 +437,6 @@ class HydrogenProperties:
         """
         return self._eval_surrogate("lh2_h", T, deriv=deriv)
 
-
     def lh2_u(self, T, deriv=False):
         """
         Internal energy of saturated liquid hydrogen.
@@ -443,7 +458,6 @@ class HydrogenProperties:
             derivative with respect to T if deriv is set to True
         """
         return self._eval_surrogate("lh2_u", T, deriv=deriv)
-
 
     def lh2_cp(self, T, deriv=False):
         """
@@ -489,7 +503,6 @@ class HydrogenProperties:
         """
         return self._eval_surrogate("lh2_rho", T, deriv=deriv)
 
-
     def sat_gh2_rho(self, T, deriv=False):
         """
         Density of saturated gaseous hydrogen.
@@ -511,7 +524,6 @@ class HydrogenProperties:
             with respect to T if deriv is set to True
         """
         return self._eval_surrogate("sat_gh2_rho", T, deriv=deriv)
-
 
     def sat_gh2_h(self, T, deriv=False):
         """
@@ -535,7 +547,6 @@ class HydrogenProperties:
         """
         return self._eval_surrogate("sat_gh2_h", T, deriv=deriv)
 
-
     def sat_gh2_cp(self, T, deriv=False):
         """
         Specific heat at constant pressure of saturated gaseous hydrogen.
@@ -557,7 +568,6 @@ class HydrogenProperties:
             (J/(kg-K)) or the derivative with respect to T if deriv is set to True
         """
         return self._eval_surrogate("sat_gh2_cp", T, deriv=deriv)
-
 
     def sat_gh2_k(self, T, deriv=False):
         """
@@ -581,7 +591,6 @@ class HydrogenProperties:
         """
         return self._eval_surrogate("sat_gh2_k", T, deriv=deriv)
 
-
     def sat_gh2_viscosity(self, T, deriv=False):
         """
         Viscosity of saturated gaseous hydrogen.
@@ -604,7 +613,6 @@ class HydrogenProperties:
         """
         return self._eval_surrogate("sat_gh2_viscosity", T, deriv=deriv)
 
-
     def sat_gh2_beta(self, T, deriv=False):
         """
         Coefficient of thermal expansion of saturated gaseous hydrogen.
@@ -626,7 +634,6 @@ class HydrogenProperties:
             or the derivative with respect to T if deriv is set to True
         """
         return self._eval_surrogate("sat_gh2_beta", T, deriv=deriv)
-
 
     def sat_gh2_T(self, P, deriv=False):
         """

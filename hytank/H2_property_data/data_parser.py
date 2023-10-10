@@ -1,4 +1,3 @@
-
 """
 @File    :   data_parser.py
 @Date    :   2023/10/10
@@ -52,6 +51,7 @@ def get_sat_property(name):
 
     return data[:, idx]
 
+
 def get_property(name, phase="both", pressure=None):
     """Get property of hydrogen from data files for a range of temperatures and pressures.
 
@@ -73,7 +73,7 @@ def get_property(name, phase="both", pressure=None):
     """
     # Check phase input
     if phase not in ["liquid", "vapor", "both"]:
-        raise ValueError(f"Phase input must be either \"liquid\", \"vapor\", or \"both\", not \"{phase}\"")
+        raise ValueError(f'Phase input must be either "liquid", "vapor", or "both", not "{phase}"')
 
     # Get the data file names
     data_dir = os.path.dirname(os.path.abspath(__file__))

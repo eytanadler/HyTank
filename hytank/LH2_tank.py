@@ -193,7 +193,7 @@ class LH2Tank(om.Group):
             promotes_inputs=["m_gas", "m_liq", "tank_weight"],
             promotes_outputs=["total_weight"],
         )
-        
+
         # Thermal model (heat leak and boil-off)
         self.add_subsystem(
             "thermals",
@@ -351,7 +351,9 @@ if __name__ == "__main__":
     nn = 101
 
     p = om.Problem()
-    p.model.add_subsystem("tank", LH2Tank(num_nodes=nn, fill_level_init=0.9, ullage_P_init=3e5, ullage_T_init=26), promotes=["*"])
+    p.model.add_subsystem(
+        "tank", LH2Tank(num_nodes=nn, fill_level_init=0.9, ullage_P_init=3e5, ullage_T_init=26), promotes=["*"]
+    )
     p.model.nonlinear_solver = om.NewtonSolver(iprint=2, solve_subsystems=True, maxiter=5)
     p.model.linear_solver = om.DirectSolver()
 

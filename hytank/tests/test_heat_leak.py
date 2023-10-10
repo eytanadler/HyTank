@@ -68,8 +68,12 @@ class HeatTransferVacuumTankTestCase(unittest.TestCase):
 
         p.run_model()
 
-        assert_near_equal(p.get_val("Q_gas", units="W"), np.array([28.16293302, 40.98797564, 54.87130595]), tolerance=1e-8)
-        assert_near_equal(p.get_val("Q_liq", units="W"), np.array([14.17964567, 35.32862698, 73.49479674]), tolerance=1e-8)
+        assert_near_equal(
+            p.get_val("Q_gas", units="W"), np.array([28.16293302, 40.98797564, 54.87130595]), tolerance=1e-8
+        )
+        assert_near_equal(
+            p.get_val("Q_liq", units="W"), np.array([14.17964567, 35.32862698, 73.49479674]), tolerance=1e-8
+        )
 
         partials = p.check_partials(method="cs")
         assert_check_partials(partials, atol=1e-13, rtol=1e-13)
@@ -93,12 +97,8 @@ class HeatTransferVacuumTankTestCase(unittest.TestCase):
 
         p.run_model()
 
-        assert_near_equal(
-            p.get_val("Q_liq", units="W"), np.array([4.28719648, 0.0, 4.28719648 / 2]), tolerance=1e-8
-        )
-        assert_near_equal(
-            p.get_val("Q_gas", units="W"), np.array([0.0, 4.28719648, 4.28719648 / 2]), tolerance=1e-8
-        )
+        assert_near_equal(p.get_val("Q_liq", units="W"), np.array([4.28719648, 0.0, 4.28719648 / 2]), tolerance=1e-8)
+        assert_near_equal(p.get_val("Q_gas", units="W"), np.array([0.0, 4.28719648, 4.28719648 / 2]), tolerance=1e-8)
 
 
 class MLIHeatFluxTestCase(unittest.TestCase):
