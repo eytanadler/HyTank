@@ -25,3 +25,7 @@ Then run the tests by entering the root directory of the package and running the
 pytest -v .
 ```
 This should print out the list of tests as it runs them and tell you whether they pass.
+
+## Getting started
+
+Have a look in the examples folder, which contains sample scripts that run the model and visualize the results.
