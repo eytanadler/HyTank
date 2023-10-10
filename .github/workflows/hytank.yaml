@@ -1,0 +1,44 @@
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    tags:
+      - v*.*.*
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+      fail-fast: false
+    env:
+      OMP_NUM_THREADS: 1
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        python-version: 3.11
+
+    - name: Install HyTank
+      run: |
+        pip install -e .[test]
+        pip install -e .[plot]
+
+    - name: List Python and package info
+      run: |
+        python --version
+        pip list
+
+    - name: Test
+      run: |
+        python -m pytest -v .
