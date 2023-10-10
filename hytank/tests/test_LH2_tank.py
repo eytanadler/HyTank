@@ -29,7 +29,14 @@ class LH2TankTestCase(unittest.TestCase):
         """
         nn = 5
         p = om.Problem()
-        p.model = LH2Tank(ullage_P_init=101325.0, fill_level_init=0.95, ullage_T_init=25, num_nodes=nn)
+        p.model = LH2Tank(
+            ullage_P_init=101325.0,
+            fill_level_init=0.95,
+            ullage_T_init=25,
+            num_nodes=nn,
+            weight_fudge_factor=1.1,
+            inner_safety_factor=1.5,
+        )
         p.model.linear_solver = om.DirectSolver()
         p.model.nonlinear_solver = om.NewtonSolver()
         p.model.nonlinear_solver.options["err_on_non_converge"] = True
@@ -63,7 +70,15 @@ class LH2TankTestCase(unittest.TestCase):
         p = om.Problem()
         p.model.add_subsystem(
             "tank",
-            LH2Tank(num_nodes=nn, fill_level_init=0.95, ullage_P_init=1.5e5, ullage_T_init=22, liquid_T_init=20),
+            LH2Tank(
+                num_nodes=nn,
+                fill_level_init=0.95,
+                ullage_P_init=1.5e5,
+                ullage_T_init=22,
+                liquid_T_init=20,
+                weight_fudge_factor=1.1,
+                inner_safety_factor=1.5,
+            ),
             promotes=["*"],
         )
 
