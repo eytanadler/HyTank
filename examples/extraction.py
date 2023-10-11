@@ -100,7 +100,7 @@ print(f"Final fill level: {p.get_val('fill_level')[-1] * 100}%")
 # -------------- Create an OpenMDAO N2 diagram to interactively view the model and results --------------
 # See https://openmdao.org/newdocs/versions/latest/features/model_visualization/n2_details/n2_details.html
 # for more details about the diagram.
-# om.n2(p, outfile="extraction_n2.html")
+om.n2(p, outfile="extraction_n2.html")
 
 # -------------- Plot the results --------------
 fig, axs = plt.subplots(2, 3, figsize=(10, 5))
@@ -145,4 +145,4 @@ fig.tight_layout()
 
 # Save the figure then show it
 fig.savefig("extraction.pdf")
-# plt.show()
+plt.show()
