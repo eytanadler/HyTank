@@ -263,7 +263,7 @@ class VacuumWallThickness(om.ExplicitComponent):
     Compute the wall thickness when the exterior pressure is greater than the interior
     one. This applies to the outer wall of a vacuum-insulated tank. It does this by
     computing the necessary wall thickness for a cylindrical shell under uniform compression
-    and sphere under uniform compression and taking the maximum thickness of the two.
+    and sphere under uniform compression and taking the (smooth) maximum thickness of the two.
 
     The equations are from Table 15.2 of Roark's Formulas for Stress and Strain, 9th
     Edition by Budynas and Sadegh.
@@ -314,6 +314,9 @@ class VacuumWallThickness(om.ExplicitComponent):
     density : float
         Density of wall material (kg/m^3), by default LiAl 2090 taken from Table XIII of
         Sullivan et al. 2006 (https://ntrs.nasa.gov/citations/20060021606)
+    smooth_max_exp : float
+        Exponent, b, to use in the smooth maximum approximation. The approximation for max(x, y) is
+        (x^b + y^b) ^ (1/b). The default for b is 25.
     """
 
     def initialize(self):
@@ -321,6 +324,7 @@ class VacuumWallThickness(om.ExplicitComponent):
         self.options.declare("stiffening_multiplier", default=0.8, desc="Multiplier on wall thickness")
         self.options.declare("youngs_modulus", default=8.0e10, desc="Young's modulus of wall material in Pa")
         self.options.declare("density", default=2699.0, desc="Density of wall material in kg/m^3")
+        self.options.declare("smooth_max_exp", default=25, desc="Exponent for smooth max")
 
     def setup(self):
         self.add_input("design_pressure_differential", val=101325.0, units="Pa")
@@ -330,7 +334,7 @@ class VacuumWallThickness(om.ExplicitComponent):
         self.add_output("thickness", lower=0.0, units="m")
         self.add_output("weight", lower=0.0, units="kg")
 
-        self.declare_partials(["thickness", "weight"], ["design_pressure_differential", "radius", "length"])
+        self.declare_partials(["thickness", "weight"], ["design_pressure_differential", "radius", "length"], method="fd")#, step=1e-200)
 
     def compute(self, inputs, outputs):
         p = inputs["design_pressure_differential"]
@@ -347,10 +351,9 @@ class VacuumWallThickness(om.ExplicitComponent):
         # Compute the thickness necessary for the spherical portion
         t_sph = r * np.sqrt(p * SF / (0.365 * E))
 
-        # Take the maximum of the two, when r and L are small the KS
-        # isn't a great approximation and the weighting parameter needs
-        # to be very high, so just let it be C1 discontinuous
-        outputs["thickness"] = stiff_mult * np.maximum(t_cyl, t_sph)
+        # Take the smooth maximum of the two
+        b = self.options["smooth_max_exp"]
+        outputs["thickness"] = stiff_mult * (t_cyl ** b + t_sph ** b) ** (1 / b)
 
         surface_area = 4 * np.pi * r**2 + 2 * np.pi * r * L
         outputs["weight"] = surface_area * outputs["thickness"] * density
@@ -382,19 +385,22 @@ class VacuumWallThickness(om.ExplicitComponent):
         dtsph_dr = t_sph / r
         dtsph_dL = 0.0
 
-        # Derivative is from whichever thickness is greater
-        use_cyl = t_cyl.item() > t_sph.item()
-        J["thickness", "design_pressure_differential"] = (dtcyl_dp if use_cyl else dtsph_dp) * stiff_mult
-        J["thickness", "radius"] = (dtcyl_dr if use_cyl else dtsph_dr) * stiff_mult
-        J["thickness", "length"] = (dtcyl_dL if use_cyl else dtsph_dL) * stiff_mult
+        # Derivative from smoothed max of the two thicknesses
+        b = self.options["smooth_max_exp"]
+        dt_dp = stiff_mult * (t_cyl ** b + t_sph ** b) ** (1 / b - 1) * (t_cyl ** (b - 1) * dtcyl_dp + t_sph ** (b - 1) * dtsph_dp)
+        dt_dr = stiff_mult * (t_cyl ** b + t_sph ** b) ** (1 / b - 1) * (t_cyl ** (b - 1) * dtcyl_dr + t_sph ** (b - 1) * dtsph_dr)
+        dt_dL = stiff_mult * (t_cyl ** b + t_sph ** b) ** (1 / b - 1) * (t_cyl ** (b - 1) * dtcyl_dL + t_sph ** (b - 1) * dtsph_dL)
+        J["thickness", "design_pressure_differential"] = dt_dp
+        J["thickness", "radius"] = dt_dr
+        J["thickness", "length"] = dt_dL
 
-        t = stiff_mult * np.maximum(t_cyl, t_sph)
+        t = stiff_mult * (t_cyl ** b + t_sph ** b) ** (1 / b)
         A = 4 * np.pi * r**2 + 2 * np.pi * r * L
         dAdr = 8 * np.pi * r + 2 * np.pi * L
         dAdL = 2 * np.pi * r
-        J["weight", "design_pressure_differential"] = A * J["thickness", "design_pressure_differential"] * density
-        J["weight", "radius"] = (dAdr * t + A * J["thickness", "radius"]) * density
-        J["weight", "length"] = (dAdL * t + A * J["thickness", "length"]) * density
+        J["weight", "design_pressure_differential"] = A * dt_dp * density
+        J["weight", "radius"] = (dAdr * t + A * dt_dr) * density
+        J["weight", "length"] = (dAdL * t + A * dt_dL) * density
 
 
 class MLIWeight(om.ExplicitComponent):

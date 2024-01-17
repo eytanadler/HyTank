@@ -55,8 +55,8 @@ class LH2TankTestCase(unittest.TestCase):
         assert_near_equal(p.get_val("T_liq", units="K"), np.full(nn, 20), tolerance=1e-9)
         assert_near_equal(p.get_val("P", units="Pa"), np.full(nn, 101324.73830745), tolerance=1e-9)
         assert_near_equal(p.get_val("fill_level"), np.full(nn, 0.95), tolerance=1e-9)
-        assert_near_equal(p.get_val("tank_weight", units="kg"), 252.70942027, tolerance=1e-9)
-        assert_near_equal(p.get_val("total_weight", units="kg"), np.full(nn, 642.94091338), tolerance=1e-9)
+        assert_near_equal(p.get_val("tank_weight", units="kg"), 252.7094369, tolerance=1e-9)
+        assert_near_equal(p.get_val("total_weight", units="kg"), np.full(nn, 642.94093001), tolerance=1e-9)
         assert_near_equal(
             p.get_val("total_weight", units="kg"),
             p.get_val("tank_weight", units="kg") + p.get_val("m_gas", units="kg") + p.get_val("m_liq", units="kg"),
@@ -237,7 +237,7 @@ class LH2TankTestCase(unittest.TestCase):
             ),
             tolerance=1e-9,
         )
-        assert_near_equal(p.get_val("tank_weight", units="kg"), 6070.794142914512, tolerance=1e-9)
+        assert_near_equal(p.get_val("tank_weight", units="kg"), 6070.79415169, tolerance=1e-9)
 
 
 class LH2TankThermalsTestCase(unittest.TestCase):

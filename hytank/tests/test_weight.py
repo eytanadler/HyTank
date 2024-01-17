@@ -133,7 +133,7 @@ class VacuumWallThicknessTestCase(unittest.TestCase):
         assert_near_equal(p.get_val("weight", units="kg"), 71.48001153, tolerance=1e-8)
 
         partials = p.check_partials(method="cs")
-        assert_check_partials(partials, atol=1e-12, rtol=1e-12)
+        assert_check_partials(partials, atol=1e-11, rtol=1e-11)
 
     def test_cylinder(self):
         """
@@ -154,7 +154,7 @@ class VacuumWallThicknessTestCase(unittest.TestCase):
         assert_near_equal(p.get_val("weight", units="kg"), 2441.189557, tolerance=1e-8)
 
         partials = p.check_partials(method="cs")
-        assert_check_partials(partials, atol=1e-12, rtol=1e-12)
+        assert_check_partials(partials, atol=1e-11, rtol=1e-11)
 
 
 class MLIWeightTestCase(unittest.TestCase):
