@@ -794,8 +794,9 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
         assert_near_equal(p.get_val("T_liq", units="K"), T_liq, tolerance=1e-12)
         assert_near_equal(p.get_val("V_gas", units="m**3"), V_tank * (1 - fill), tolerance=1e-12)
 
-        partials = p.check_partials(method="cs", out_stream=None)
-        assert_check_partials(partials)
+        # Partials must be checked with FD because GH2 prop surrogates are not complex safe
+        partials = p.check_partials(method="fd", out_stream=None)
+        assert_check_partials(partials, atol=5e-4, rtol=5e-5)
 
     def test_vectorized(self):
         p = om.Problem()
@@ -856,6 +857,12 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
 
         p.set_val("radius", 0.6, units="m")
         p.set_val("length", 1.3, units="m")
+        
+        # Initial conditions
+        p.set_val("fill_level_init", 0.16)
+        p.set_val("ullage_T_init", 24, units="K")
+        p.set_val("ullage_P_init", 1.7e5, units="Pa")
+        p.set_val("liquid_T_init", 20, units="K")
 
         # Add some delta to see that it works properly
         val = np.linspace(-10, 10, nn)
@@ -867,8 +874,9 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
 
         p.run_model()
 
-        partials = p.check_partials(method="cs", out_stream=None)
-        assert_check_partials(partials)
+        # Partials must be checked with FD because GH2 prop surrogates are not complex safe
+        partials = p.check_partials(method="fd", out_stream=None)
+        assert_check_partials(partials, atol=3e-4, rtol=5e-5)
 
 
 if __name__ == "__main__":
