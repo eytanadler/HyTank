@@ -300,7 +300,7 @@ class BoilOff(om.Group):
 
         def get_ode_problem(num_nodes=1):
             # Set up a problem with the ODE that can be used in an initial value problem solver
-            p = om.Problem()
+            p = om.Problem(reports=False)
             p.model = FullODE(num_nodes=num_nodes, end_cap_depth_ratio=self.options["end_cap_depth_ratio"])
 
             # Set model options so that this ODE has the same set options as the group's components
@@ -1154,7 +1154,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
         self.add_output("P_gas", units="Pa", shape=(nn,), ref=1e5, val=1e5, lower=5e4, upper=12.5e5)
 
         arng = np.arange(nn)
-        method = "fd"
+        method = "exact"
         self.declare_partials(
             ["m_dot_gas", "m_dot_liq", "V_dot_gas", "T_dot_gas", "T_dot_liq"],
             [
@@ -1249,6 +1249,9 @@ class LH2BoilOffODE(om.ExplicitComponent):
         self.cp_liq = self.H2.lh2_cp(T_liq)  # specific heat at constant pressure
         self.rho_liq = self.H2.lh2_rho(T_liq)  # density
         self.P_liq = self.H2.lh2_P(T_liq)  # pressure
+        self.beta_liq = self.H2.lh2_beta(T_liq)  # coefficient of thermal expansion
+        self.visc_liq = self.H2.lh2_viscosity(T_liq)  # viscosity
+        self.k_liq = self.H2.lh2_k(T_liq)  # thermal conductivity
 
         # Temperature of the interface assumes saturated hydrogen with same pressure as the ullage
         self.T_int = self.H2.sat_gh2_T(P_gas)  # use saturated GH2 temperature
@@ -1286,10 +1289,34 @@ class LH2BoilOffODE(om.ExplicitComponent):
         # so we'll ignore it (see Van Dresar paper).
         self.Q_gas_int = Q_gas_int = self.heat_transfer_coeff_gas_int * A_int * (T_gas - self.T_int)
 
+        # ==================== Compute heat transfer between liquid and interface ====================
+        # Use constants specified in options
+        self.C_liq_const = self.options["heat_transfer_C_liq_const"]
+        self.n_liq_const = self.options["heat_transfer_n_liq_const"]
+
+        # Compute the fluid properties for heat transfer
+        self.prandtl_liq = self.cp_liq * self.visc_liq / self.k_liq
+        self.grashof_liq = (
+            GRAV_CONST
+            * self.beta_liq
+            * self.rho_liq**2
+            * np.sqrt((T_liq - self.T_int) ** 2)  # use sqrt of square as absolute value shorthand so complex-safe
+            * L_int**3
+            / self.visc_liq**2
+        )
+        self.prandtl_liq[np.real(self.prandtl_liq) < 0] = 0.0
+        self.grashof_liq[np.real(self.grashof_liq) < 0] = 0.0
+        self.nusselt_liq = self.C_liq_const * (self.prandtl_liq * self.grashof_liq) ** self.n_liq_const
+        self.heat_transfer_coeff_liq_int = self.k_liq / L_int * self.nusselt_liq
+
+        # Heat from the environment that goes to heating the walls is likely be small (only a few percent),
+        # so we'll ignore it (see Van Dresar paper).
+        self.Q_liq_int = Q_liq_int = self.heat_transfer_coeff_liq_int * A_int * (T_liq - self.T_int)
+
         # ============================================ ODEs ============================================
         # Evaluate the ODEs without any influences from bulk boiling or cloud condensation
         # Mass flows
-        self.m_dot_boil_off = (Q_gas_int + Q_add * heater_boil_frac) / (self.h_gas - self.h_liq)
+        self.m_dot_boil_off = (Q_gas_int + Q_liq_int + Q_add * heater_boil_frac) / (self.h_gas - self.h_liq)
         self.m_dot_liq = -self.m_dot_boil_off - m_dot_liq_out
         self.m_dot_gas = self.m_dot_boil_off - m_dot_gas_out
 
@@ -1300,6 +1327,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
         # Temperature rates
         self.T_dot_liq = (
             Q_liq
+            - Q_liq_int
             + Q_add * (1 - heater_boil_frac)
             - self.P_gas * self.V_dot_liq
             + self.m_dot_liq * (self.h_liq - self.u_liq)
@@ -1477,12 +1505,13 @@ class LH2BoilOffODE(om.ExplicitComponent):
 
         # Interface and heated boil-off effect on m_dot_boil_off
         dmg__Q_gas_int = dmg__m_dot_boil_off / (self.h_gas - self.h_liq)
+        dmg__Q_liq_int = dmg__Q_gas_int.copy()
         dmg__Q_add = dmg__m_dot_boil_off * heater_boil_frac / (self.h_gas - self.h_liq)
-        dmg__h_gas = -dmg__m_dot_boil_off * (self.Q_gas_int + Q_add * heater_boil_frac) / (self.h_gas - self.h_liq) ** 2
-        dmg__h_liq = dmg__m_dot_boil_off * (self.Q_gas_int + Q_add * heater_boil_frac) / (self.h_gas - self.h_liq) ** 2
+        dmg__h_gas = -dmg__m_dot_boil_off * (self.Q_gas_int + self.Q_liq_int + Q_add * heater_boil_frac) / (self.h_gas - self.h_liq) ** 2
+        dmg__h_liq = dmg__m_dot_boil_off * (self.Q_gas_int + self.Q_liq_int + Q_add * heater_boil_frac) / (self.h_gas - self.h_liq) ** 2
 
         # -------------- Derivative of Q_gas_int w.r.t. inputs --------------
-        # Call the heat_transfer_coeff_gas_int variable htc. There are three components to
+        # Call the heat_transfer_coeff_gas_int variable htcg. There are three components to
         # the heat transfer coefficient: k_sat_gas, Nusselt number, and L_int
 
         # Total derivatives of T_int w.r.t. inputs, which will be needed for both the
@@ -1501,29 +1530,32 @@ class LH2BoilOffODE(om.ExplicitComponent):
         J["P_gas", "V_gas"] = dP_gas__V_gas
 
         # k_sat_gas_portion, which depends only on T_int
-        dhtc__k_sat_gas = self.nusselt_gas / L_int
+        dhtcg__k_sat_gas = self.nusselt_gas / L_int
         dk_sat_gas__T_int = self.H2.sat_gh2_k(self.T_int, deriv=True)
 
         # Nusselt number portion
-        dhtc__Nug = self.k_sat_gas / L_int
+        dhtcg__Nug = self.k_sat_gas / L_int
 
-        # Use mask to avoid NaNs caused by
+        # Use mask to avoid NaNs caused by negative Prandtl or Grashof values
+        # in the Nusselt number correlation equation. We can detect where they
+        # were negative by looking at where the Prandtl or Grashof values are
+        # zero because we set any negative values to zero in the compute method.
         NaN_mask = np.logical_and(self.prandtl_gas != 0.0, self.grashof_gas != 0.0)
-        dhtc__Prg = np.zeros_like(self.prandtl_gas)
-        dhtc__Grg = np.zeros_like(self.grashof_gas)
-        dhtc__Prg[NaN_mask] = (
+        dhtcg__Prg = np.zeros_like(self.prandtl_gas)
+        dhtcg__Grg = np.zeros_like(self.grashof_gas)
+        dhtcg__Prg[NaN_mask] = (
             self.n_gas_const
             * self.C_gas_const
             * (self.prandtl_gas[NaN_mask] * self.grashof_gas[NaN_mask]) ** (self.n_gas_const - 1)
             * self.grashof_gas[NaN_mask]
-            * dhtc__Nug[NaN_mask]
+            * dhtcg__Nug[NaN_mask]
         )
-        dhtc__Grg[NaN_mask] = (
+        dhtcg__Grg[NaN_mask] = (
             self.n_gas_const
             * self.C_gas_const
             * (self.prandtl_gas[NaN_mask] * self.grashof_gas[NaN_mask]) ** (self.n_gas_const - 1)
             * self.prandtl_gas[NaN_mask]
-            * dhtc__Nug[NaN_mask]
+            * dhtcg__Nug[NaN_mask]
         )
 
         dPrg__T_int = (
@@ -1560,8 +1592,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
             / self.visc_sat_gas**3
             * self.H2.sat_gh2_viscosity(self.T_int, deriv=True)
         )
-        abs_val_mult = np.ones(self.options["num_nodes"])  # derivative of abs(T_gas - T_int) w.r.t. T_gas
-        abs_val_mult[(T_gas - self.T_int) < 0] = -1.0
+        abs_val_mult = np.sign(T_gas - self.T_int)  # derivative of abs(T_gas - T_int) w.r.t. T_gas
         dGrg__T_int += (  # p(Grg)/p(T_int)
             GRAV_CONST
             * self.beta_sat_gas
@@ -1590,33 +1621,120 @@ class LH2BoilOffODE(om.ExplicitComponent):
         dGrg__T_gas[np.real(self.grashof_gas) < 0] *= 0.0
         dGrg__L_int[np.real(self.grashof_gas) < 0] *= 0.0
 
-        dhtc__T_int = dhtc__k_sat_gas * dk_sat_gas__T_int + dhtc__Prg * dPrg__T_int + dhtc__Grg * dGrg__T_int
+        dhtcg__T_int = dhtcg__k_sat_gas * dk_sat_gas__T_int + dhtcg__Prg * dPrg__T_int + dhtcg__Grg * dGrg__T_int
 
         # Total derivatives of the heat transfer coefficient
-        dhtc__m_gas = dhtc__T_int * dT_int__m_gas
-        dhtc__T_gas = dhtc__T_int * dT_int__T_gas + dhtc__Grg * dGrg__T_gas
-        dhtc__V_gas = dhtc__T_int * dT_int__V_gas
-        dhtc__L_int = dhtc__Grg * dGrg__L_int - self.k_sat_gas / L_int**2 * self.nusselt_gas
+        dhtcg__m_gas = dhtcg__T_int * dT_int__m_gas
+        dhtcg__T_gas = dhtcg__T_int * dT_int__T_gas + dhtcg__Grg * dGrg__T_gas
+        dhtcg__V_gas = dhtcg__T_int * dT_int__V_gas
+        dhtcg__L_int = dhtcg__Grg * dGrg__L_int - self.k_sat_gas / L_int**2 * self.nusselt_gas
 
         # Get total derivatives of Q_gas_int w.r.t. inputs
-        dQ_gas_int__htc = A_int * (T_gas - self.T_int)
+        dQ_gas_int__htcg = A_int * (T_gas - self.T_int)
         pQ_gas_int__T_int = -self.heat_transfer_coeff_gas_int * A_int  # just the partial derivative w.r.t. T_int
-        dQ_gas_int__m_gas = dQ_gas_int__htc * dhtc__m_gas + pQ_gas_int__T_int * dT_int__m_gas
+        dQ_gas_int__m_gas = dQ_gas_int__htcg * dhtcg__m_gas + pQ_gas_int__T_int * dT_int__m_gas
         dQ_gas_int__T_gas = (
-            dQ_gas_int__htc * dhtc__T_gas + pQ_gas_int__T_int * dT_int__T_gas + self.heat_transfer_coeff_gas_int * A_int
+            dQ_gas_int__htcg * dhtcg__T_gas + pQ_gas_int__T_int * dT_int__T_gas + self.heat_transfer_coeff_gas_int * A_int
         )
-        dQ_gas_int__V_gas = dQ_gas_int__htc * dhtc__V_gas + pQ_gas_int__T_int * dT_int__V_gas
-        dQ_gas_int__L_int = dQ_gas_int__htc * dhtc__L_int
+        dQ_gas_int__V_gas = dQ_gas_int__htcg * dhtcg__V_gas + pQ_gas_int__T_int * dT_int__V_gas
+        dQ_gas_int__L_int = dQ_gas_int__htcg * dhtcg__L_int
         dQ_gas_int__A_int = self.heat_transfer_coeff_gas_int * (T_gas - self.T_int)
+
+        # -------------- Derivative of Q_liq_int w.r.t. inputs --------------
+        # Call the heat_transfer_coeff_liq_int variable htcl. There are three components to
+        # the heat transfer coefficient: k_liq, Nusselt number, and L_int
+
+        # Derivatives of k_liq portion of htcl w.r.t. inputs
+        dhtcl__k_liq = self.nusselt_liq / L_int
+        dk_liq__T_liq = self.H2.lh2_k(T_liq, deriv=True)
+
+        # Derivatives w.r.t. Nusselt number
+        dhtcl__Nul = self.k_liq / L_int
+
+        # Like for the Q_gas_int derivatives, use a mask for where Pr and Gr values were
+        # zeroed out. See the comments at the Q_gas_int derivatives for more details.
+        NaN_mask = np.logical_and(self.prandtl_liq != 0.0, self.grashof_liq != 0.0)
+        dhtcl__Prl = np.zeros_like(self.prandtl_liq)
+        dhtcl__Grl = np.zeros_like(self.grashof_liq)
+        dhtcl__Prl[NaN_mask] = (
+            self.n_liq_const
+            * self.C_liq_const
+            * (self.prandtl_liq[NaN_mask] * self.grashof_liq[NaN_mask]) ** (self.n_liq_const - 1)
+            * self.grashof_liq[NaN_mask]
+            * dhtcl__Nul[NaN_mask]
+        )
+        dhtcl__Grl[NaN_mask] = (
+            self.n_liq_const
+            * self.C_liq_const
+            * (self.prandtl_liq[NaN_mask] * self.grashof_liq[NaN_mask]) ** (self.n_liq_const - 1)
+            * self.prandtl_liq[NaN_mask]
+            * dhtcl__Nul[NaN_mask]
+        )
+
+        # Prandtl number total derivative
+        dPrl__T_liq = (
+            self.visc_liq / self.k_liq * self.H2.lh2_cp(T_liq, deriv=True)
+            + self.cp_liq / self.k_liq * self.H2.lh2_viscosity(T_liq, deriv=True)
+            - self.cp_liq * self.visc_liq / self.k_liq**2 * dk_liq__T_liq
+        )
+
+        # Grashof number total derivatives
+        abs_val_mult = np.sign(T_liq - self.T_int)  # derivative of abs(T_liq - T_int) w.r.t. T_liq
+        dGrl__T_int = (  # p(Grg)/p(T_int)
+            GRAV_CONST
+            * self.beta_liq
+            * self.rho_liq**2
+            * (-abs_val_mult)
+            * L_int**3
+            / self.visc_liq**2
+        )
+
+        dGrl__T_liq = -dGrl__T_int.copy()  # p(Grl)/p(T_liq)
+        dGrl__T_liq += (  # p(Grl)/p(beta) * p(beta)/p(T_liq)
+            self.grashof_liq / self.beta_liq * self.H2.lh2_beta(T_liq, deriv=True)
+        )
+        dGrl__T_liq += (  # p(Grl)/p(rho) * p(rho)/p(T_liq)
+            2 * self.grashof_liq / self.rho_liq * self.H2.lh2_rho(T_liq, deriv=True)
+        )
+        dGrl__T_liq += (  # p(Grl)/p(viscosity) * p(viscosity)/p(T_liq)
+            -2 * self.grashof_liq / self.visc_liq * self.H2.lh2_viscosity(T_liq, deriv=True)
+        )
+
+        dGrl__L_int = 3 * self.grashof_liq / L_int
+
+        # Zero out anywhere the Prandtl or Grashof number is negative
+        dPrl__T_liq[np.real(self.prandtl_liq) < 0] *= 0.0
+        dGrl__T_int[np.real(self.grashof_liq) < 0] *= 0.0
+        dGrl__T_liq[np.real(self.grashof_liq) < 0] *= 0.0
+        dGrl__L_int[np.real(self.grashof_liq) < 0] *= 0.0
+
+        dhtcl__T_int = dhtcl__Grl * dGrl__T_int
+
+        # Total derivatives of the heat transfer coefficient
+        dhtcl__T_liq = dhtcl__k_liq * dk_liq__T_liq + dhtcl__Prl * dPrl__T_liq + dhtcl__Grl * dGrl__T_liq
+        dhtcl__L_int = dhtcl__Grl * dGrl__L_int - self.heat_transfer_coeff_liq_int / L_int
+        dhtcl__m_gas = dhtcl__T_int * dT_int__m_gas
+        dhtcl__T_gas = dhtcl__T_int * dT_int__T_gas
+        dhtcl__V_gas = dhtcl__T_int * dT_int__V_gas
+
+        # Total derivatives of Q_liq_int w.r.t. inputs
+        dQ_liq_int__htcl = A_int * (T_liq - self.T_int)
+        pQ_liq_int__T_int = -self.heat_transfer_coeff_liq_int * A_int  # just the partial derivative w.r.t. T_int
+        dQ_liq_int__T_liq = self.heat_transfer_coeff_liq_int * A_int + dQ_liq_int__htcl * dhtcl__T_liq
+        dQ_liq_int__m_gas = pQ_liq_int__T_int * dT_int__m_gas + dQ_liq_int__htcl * dhtcl__m_gas
+        dQ_liq_int__T_gas = pQ_liq_int__T_int * dT_int__T_gas + dQ_liq_int__htcl * dhtcl__T_gas
+        dQ_liq_int__V_gas = pQ_liq_int__T_int * dT_int__V_gas + dQ_liq_int__htcl * dhtcl__V_gas
+        dQ_liq_int__L_int = dQ_liq_int__htcl * dhtcl__L_int
+        dQ_liq_int__A_int = self.heat_transfer_coeff_liq_int * (T_liq - self.T_int)
 
         # -------------- Finish off the m_dot_boil_off derivatives (excl bulk boiling and condensation) --------------
         dh_gas__P_gas, dh_gas__T_gas = self.H2.gh2_h(self.P_gas, T_gas, deriv=True)
-        dmg__m_gas = dmg__Q_gas_int * dQ_gas_int__m_gas + dmg__h_gas * dh_gas__P_gas * dP_gas__m_gas
-        dmg__T_gas = dmg__Q_gas_int * dQ_gas_int__T_gas + dmg__h_gas * (dh_gas__T_gas + dh_gas__P_gas * dP_gas__T_gas)
-        dmg__V_gas = dmg__Q_gas_int * dQ_gas_int__V_gas + dmg__h_gas * dh_gas__P_gas * dP_gas__V_gas
-        dmg__T_liq = dmg__h_liq * self.H2.lh2_h(T_liq, deriv=True)
-        dmg__L_int = dmg__Q_gas_int * dQ_gas_int__L_int
-        dmg__A_int = dmg__Q_gas_int * dQ_gas_int__A_int
+        dmg__m_gas = dmg__Q_gas_int * dQ_gas_int__m_gas + dmg__Q_liq_int * dQ_liq_int__m_gas + dmg__h_gas * dh_gas__P_gas * dP_gas__m_gas
+        dmg__T_gas = dmg__Q_gas_int * dQ_gas_int__T_gas + dmg__Q_liq_int * dQ_liq_int__T_gas + dmg__h_gas * (dh_gas__T_gas + dh_gas__P_gas * dP_gas__T_gas)
+        dmg__V_gas = dmg__Q_gas_int * dQ_gas_int__V_gas + dmg__Q_liq_int * dQ_liq_int__V_gas + dmg__h_gas * dh_gas__P_gas * dP_gas__V_gas
+        dmg__T_liq = dmg__h_liq * self.H2.lh2_h(T_liq, deriv=True) + dmg__Q_liq_int * dQ_liq_int__T_liq
+        dmg__L_int = dmg__Q_gas_int * dQ_gas_int__L_int + dmg__Q_liq_int * dQ_liq_int__L_int
+        dmg__A_int = dmg__Q_gas_int * dQ_gas_int__A_int + dmg__Q_liq_int * dQ_liq_int__A_int
         # dmg__Q_add already done
 
         # Dump em
@@ -1726,24 +1844,33 @@ class LH2BoilOffODE(om.ExplicitComponent):
         # Derivatives originating from partial w.r.t. Q_liq
         J["T_dot_liq", "Q_liq"] = 1 / (m_liq * self.cp_liq)
 
+        # Derivatives originating from partial w.r.t. Q_liq_int
+        dT_dot_liq__Q_liq_int = -1 / (m_liq * self.cp_liq)
+        J["T_dot_liq", "m_gas"] = dT_dot_liq__Q_liq_int * dQ_liq_int__m_gas
+        J["T_dot_liq", "T_gas"] = dT_dot_liq__Q_liq_int * dQ_liq_int__T_gas
+        J["T_dot_liq", "V_gas"] = dT_dot_liq__Q_liq_int * dQ_liq_int__V_gas
+        J["T_dot_liq", "T_liq"] = dT_dot_liq__Q_liq_int * dQ_liq_int__T_liq
+        J["T_dot_liq", "L_interface"] = dT_dot_liq__Q_liq_int * dQ_liq_int__L_int
+        J["T_dot_liq", "A_interface"] = dT_dot_liq__Q_liq_int * dQ_liq_int__A_int
+
         # Derivatives originating from partial w.r.t. Q_add
         J["T_dot_liq", "Q_add"] = (1 - heater_boil_frac) / (m_liq * self.cp_liq)
 
         # Derivatives originating from partial w.r.t. P_gas
         dT_dot_liq__P_gas = -self.V_dot_liq / (m_liq * self.cp_liq)
-        J["T_dot_liq", "m_gas"] = dT_dot_liq__P_gas * dP_gas__m_gas
-        J["T_dot_liq", "T_gas"] = dT_dot_liq__P_gas * dP_gas__T_gas
-        J["T_dot_liq", "V_gas"] = dT_dot_liq__P_gas * dP_gas__V_gas
+        J["T_dot_liq", "m_gas"] += dT_dot_liq__P_gas * dP_gas__m_gas
+        J["T_dot_liq", "T_gas"] += dT_dot_liq__P_gas * dP_gas__T_gas
+        J["T_dot_liq", "V_gas"] += dT_dot_liq__P_gas * dP_gas__V_gas
 
         # Derivatives originating from partial w.r.t. V_dot_liq
         dT_dot_liq__V_dot_liq = -self.P_gas / (m_liq * self.cp_liq)
         J["T_dot_liq", "m_gas"] += dT_dot_liq__V_dot_liq * (-J["V_dot_gas", "m_gas"])
         J["T_dot_liq", "T_gas"] += dT_dot_liq__V_dot_liq * (-J["V_dot_gas", "T_gas"])
         J["T_dot_liq", "V_gas"] += dT_dot_liq__V_dot_liq * (-J["V_dot_gas", "V_gas"])
-        J["T_dot_liq", "T_liq"] = dT_dot_liq__V_dot_liq * (-J["V_dot_gas", "T_liq"])
+        J["T_dot_liq", "T_liq"] += dT_dot_liq__V_dot_liq * (-J["V_dot_gas", "T_liq"])
         J["T_dot_liq", "Q_add"] += dT_dot_liq__V_dot_liq * (-J["V_dot_gas", "Q_add"])
-        J["T_dot_liq", "L_interface"] = dT_dot_liq__V_dot_liq * (-J["V_dot_gas", "L_interface"])
-        J["T_dot_liq", "A_interface"] = dT_dot_liq__V_dot_liq * (-J["V_dot_gas", "A_interface"])
+        J["T_dot_liq", "L_interface"] += dT_dot_liq__V_dot_liq * (-J["V_dot_gas", "L_interface"])
+        J["T_dot_liq", "A_interface"] += dT_dot_liq__V_dot_liq * (-J["V_dot_gas", "A_interface"])
         J["T_dot_liq", "m_dot_liq_out"] = dT_dot_liq__V_dot_liq * (-J["V_dot_gas", "m_dot_liq_out"])
 
         # Derivatives originating from partial w.r.t. m_dot_liq
