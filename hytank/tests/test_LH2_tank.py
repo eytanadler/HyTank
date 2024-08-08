@@ -86,6 +86,7 @@ class LH2TankTestCase(unittest.TestCase):
                 liquid_T_init=20,
                 weight_fudge_factor=1.1,
                 inner_safety_factor=1.5,
+                heat_multiplier=1.2,
             ),
             promotes=["*"],
         )

@@ -29,7 +29,7 @@ class HeatTransferVacuumTankTestCase(unittest.TestCase):
         Regression test with some reasonable values that also checks the partials.
         """
         p = om.Problem()
-        p.model.add_subsystem("model", HeatTransferVacuumTank(), promotes=["*"])
+        p.model.add_subsystem("model", HeatTransferVacuumTank(heat_multiplier=1.2), promotes=["*"])
 
         p.setup(force_alloc_complex=True)
 
@@ -55,7 +55,7 @@ class HeatTransferVacuumTankTestCase(unittest.TestCase):
         nn = 3
 
         p = om.Problem()
-        p.model.add_subsystem("model", HeatTransferVacuumTank(num_nodes=nn), promotes=["*"])
+        p.model.add_subsystem("model", HeatTransferVacuumTank(num_nodes=nn, heat_multiplier=1.2), promotes=["*"])
 
         p.setup(force_alloc_complex=True)
 

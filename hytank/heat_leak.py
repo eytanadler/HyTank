@@ -62,12 +62,12 @@ class HeatTransferVacuumTank(om.Group):
         Number of analysis points to run (scalar, dimensionless)
     heat_multiplier : float
         Multiplier on the output heat to account for heat through supports
-        and other connections, by default 1.2 (scalar, dimensionless)
+        and other connections, by default 2.0 (scalar, dimensionless)
     """
 
     def initialize(self):
         self.options.declare("num_nodes", default=1, desc="Number of design points to run")
-        self.options.declare("heat_multiplier", default=1.2, desc="Multiplier on heat leak")
+        self.options.declare("heat_multiplier", default=2.0, desc="Multiplier on heat leak")
 
     def setup(self):
         nn = self.options["num_nodes"]
