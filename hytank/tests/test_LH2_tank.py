@@ -120,20 +120,6 @@ class LH2TankTestCase(unittest.TestCase):
 
         p.run_model()
 
-        def printarr(arr):
-            print("")
-            for elem in arr:
-                print(f"                    {elem:.15f},")
-            print("")
-
-        printarr(p.get_val("m_gas", units="kg"))
-        printarr(p.get_val("m_liq", units="kg"))
-        printarr(p.get_val("T_gas", units="K"))
-        printarr(p.get_val("T_liq", units="K"))
-        printarr(p.get_val("P", units="Pa"))
-        printarr(p.get_val("fill_level"))
-        printarr(p.get_val("total_weight", units="kg"))
-
         assert_near_equal(
             p.get_val("m_gas", units="kg"),
             np.array(
