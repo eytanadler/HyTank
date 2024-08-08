@@ -615,7 +615,17 @@ class LH2BoilOffODETestCase(unittest.TestCase):
         and bulk boiling terms.
         """
         p = om.Problem()
-        p.model.add_subsystem("model", LH2BoilOffODE(heater_boil_frac=0.75, heat_transfer_C_gas_const=0.27, heat_transfer_n_gas_const=0.25, heat_transfer_C_liq_const=0.05, heat_transfer_n_liq_const=0.23), promotes=["*"])
+        p.model.add_subsystem(
+            "model",
+            LH2BoilOffODE(
+                heater_boil_frac=0.75,
+                heat_transfer_C_gas_const=0.27,
+                heat_transfer_n_gas_const=0.25,
+                heat_transfer_C_liq_const=0.05,
+                heat_transfer_n_liq_const=0.23,
+            ),
+            promotes=["*"],
+        )
 
         p.setup()
 
@@ -647,7 +657,17 @@ class LH2BoilOffODETestCase(unittest.TestCase):
 
     def test_derivatives(self):
         p = om.Problem()
-        p.model.add_subsystem("model", LH2BoilOffODE(heater_boil_frac=0.75, heat_transfer_C_gas_const=0.27, heat_transfer_n_gas_const=0.25, heat_transfer_C_liq_const=0.05, heat_transfer_n_liq_const=0.23), promotes=["*"])
+        p.model.add_subsystem(
+            "model",
+            LH2BoilOffODE(
+                heater_boil_frac=0.75,
+                heat_transfer_C_gas_const=0.27,
+                heat_transfer_n_gas_const=0.25,
+                heat_transfer_C_liq_const=0.05,
+                heat_transfer_n_liq_const=0.23,
+            ),
+            promotes=["*"],
+        )
 
         p.setup(force_alloc_complex=True)
 
@@ -678,7 +698,18 @@ class LH2BoilOffODETestCase(unittest.TestCase):
 
     def test_vectorized_derivatives_with_heat_and_mass_flows(self):
         p = om.Problem()
-        p.model.add_subsystem("model", LH2BoilOffODE(heater_boil_frac=0.75, heat_transfer_C_gas_const=0.27, heat_transfer_n_gas_const=0.25, heat_transfer_C_liq_const=0.05, heat_transfer_n_liq_const=0.23, num_nodes=3), promotes=["*"])
+        p.model.add_subsystem(
+            "model",
+            LH2BoilOffODE(
+                heater_boil_frac=0.75,
+                heat_transfer_C_gas_const=0.27,
+                heat_transfer_n_gas_const=0.25,
+                heat_transfer_C_liq_const=0.05,
+                heat_transfer_n_liq_const=0.23,
+                num_nodes=3,
+            ),
+            promotes=["*"],
+        )
 
         p.setup(force_alloc_complex=True)
 
@@ -864,7 +895,7 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
 
         p.set_val("radius", 0.6, units="m")
         p.set_val("length", 1.3, units="m")
-        
+
         # Initial conditions
         p.set_val("fill_level_init", 0.16)
         p.set_val("ullage_T_init", 24, units="K")

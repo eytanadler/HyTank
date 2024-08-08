@@ -749,8 +749,7 @@ class LiquidHeight(om.ImplicitComponent):
         th_h = 2 / np.sqrt(1 - (1 - h / r) ** 2) / r
 
         Vcyl_r = (
-            r * (th - np.sin(th)) * L  # pV_cyl / pr
-            + r**2 / 2 * (1 - np.cos(th)) * L * th_r  # pV_cyl / pth * pth / pr
+            r * (th - np.sin(th)) * L + r**2 / 2 * (1 - np.cos(th)) * L * th_r  # pV_cyl / pr  # pV_cyl / pth * pth / pr
         )
         Vcyl_h = r**2 / 2 * (1 - np.cos(th)) * L * th_h
         Vcyl_L = r**2 / 2 * (th - np.sin(th))
@@ -1113,10 +1112,18 @@ class LH2BoilOffODE(om.ExplicitComponent):
         self.options.declare(
             "heater_boil_frac", default=0.1, desc="Fraction of heat from heater that goes straight to boiling"
         )
-        self.options.declare("heat_transfer_C_gas_const", default=0.27 / 4, types=float, desc="Ullage convective C coefficient")
-        self.options.declare("heat_transfer_n_gas_const", default=0.25, types=float, desc="Ullage convective n coefficient")
-        self.options.declare("heat_transfer_C_liq_const", default=0.27 / 20, types=float, desc="Liquid convective C coefficient")
-        self.options.declare("heat_transfer_n_liq_const", default=0.25, types=float, desc="Liquid convective n coefficient")
+        self.options.declare(
+            "heat_transfer_C_gas_const", default=0.27 / 4, types=float, desc="Ullage convective C coefficient"
+        )
+        self.options.declare(
+            "heat_transfer_n_gas_const", default=0.25, types=float, desc="Ullage convective n coefficient"
+        )
+        self.options.declare(
+            "heat_transfer_C_liq_const", default=0.27 / 20, types=float, desc="Liquid convective C coefficient"
+        )
+        self.options.declare(
+            "heat_transfer_n_liq_const", default=0.25, types=float, desc="Liquid convective n coefficient"
+        )
         self.options.declare(
             "sigmoid_fac", default=100.0, desc="Multiplier on exponent in sigmoid for bulk boil and cloud condensation"
         )
@@ -1506,8 +1513,16 @@ class LH2BoilOffODE(om.ExplicitComponent):
         dmg__Q_gas_int = dmg__m_dot_boil_off / (self.h_gas - self.h_liq)
         dmg__Q_liq_int = dmg__Q_gas_int.copy()
         dmg__Q_add = dmg__m_dot_boil_off * heater_boil_frac / (self.h_gas - self.h_liq)
-        dmg__h_gas = -dmg__m_dot_boil_off * (self.Q_gas_int + self.Q_liq_int + Q_add * heater_boil_frac) / (self.h_gas - self.h_liq) ** 2
-        dmg__h_liq = dmg__m_dot_boil_off * (self.Q_gas_int + self.Q_liq_int + Q_add * heater_boil_frac) / (self.h_gas - self.h_liq) ** 2
+        dmg__h_gas = (
+            -dmg__m_dot_boil_off
+            * (self.Q_gas_int + self.Q_liq_int + Q_add * heater_boil_frac)
+            / (self.h_gas - self.h_liq) ** 2
+        )
+        dmg__h_liq = (
+            dmg__m_dot_boil_off
+            * (self.Q_gas_int + self.Q_liq_int + Q_add * heater_boil_frac)
+            / (self.h_gas - self.h_liq) ** 2
+        )
 
         # -------------- Derivative of Q_gas_int w.r.t. inputs --------------
         # Call the heat_transfer_coeff_gas_int variable htcg. There are three components to
@@ -1593,12 +1608,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
         )
         abs_val_mult = np.sign(T_gas - self.T_int)  # derivative of abs(T_gas - T_int) w.r.t. T_gas
         dGrg__T_int += (  # p(Grg)/p(T_int)
-            GRAV_CONST
-            * self.beta_sat_gas
-            * self.rho_sat_gas**2
-            * (-abs_val_mult)
-            * L_int**3
-            / self.visc_sat_gas**2
+            GRAV_CONST * self.beta_sat_gas * self.rho_sat_gas**2 * (-abs_val_mult) * L_int**3 / self.visc_sat_gas**2
         )
 
         dGrg__T_gas = (  # p(Grg)/p(T_gas)
@@ -1633,7 +1643,9 @@ class LH2BoilOffODE(om.ExplicitComponent):
         pQ_gas_int__T_int = -self.heat_transfer_coeff_gas_int * A_int  # just the partial derivative w.r.t. T_int
         dQ_gas_int__m_gas = dQ_gas_int__htcg * dhtcg__m_gas + pQ_gas_int__T_int * dT_int__m_gas
         dQ_gas_int__T_gas = (
-            dQ_gas_int__htcg * dhtcg__T_gas + pQ_gas_int__T_int * dT_int__T_gas + self.heat_transfer_coeff_gas_int * A_int
+            dQ_gas_int__htcg * dhtcg__T_gas
+            + pQ_gas_int__T_int * dT_int__T_gas
+            + self.heat_transfer_coeff_gas_int * A_int
         )
         dQ_gas_int__V_gas = dQ_gas_int__htcg * dhtcg__V_gas + pQ_gas_int__T_int * dT_int__V_gas
         dQ_gas_int__L_int = dQ_gas_int__htcg * dhtcg__L_int
@@ -1680,12 +1692,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
         # Grashof number total derivatives
         abs_val_mult = np.sign(T_liq - self.T_int)  # derivative of abs(T_liq - T_int) w.r.t. T_liq
         dGrl__T_int = (  # p(Grg)/p(T_int)
-            GRAV_CONST
-            * self.beta_liq
-            * self.rho_liq**2
-            * (-abs_val_mult)
-            * L_int**3
-            / self.visc_liq**2
+            GRAV_CONST * self.beta_liq * self.rho_liq**2 * (-abs_val_mult) * L_int**3 / self.visc_liq**2
         )
 
         dGrl__T_liq = -dGrl__T_int.copy()  # p(Grl)/p(T_liq)
@@ -1728,9 +1735,21 @@ class LH2BoilOffODE(om.ExplicitComponent):
 
         # -------------- Finish off the m_dot_boil_off derivatives (excl bulk boiling and condensation) --------------
         dh_gas__P_gas, dh_gas__T_gas = self.H2.gh2_h(self.P_gas, T_gas, deriv=True)
-        dmg__m_gas = dmg__Q_gas_int * dQ_gas_int__m_gas + dmg__Q_liq_int * dQ_liq_int__m_gas + dmg__h_gas * dh_gas__P_gas * dP_gas__m_gas
-        dmg__T_gas = dmg__Q_gas_int * dQ_gas_int__T_gas + dmg__Q_liq_int * dQ_liq_int__T_gas + dmg__h_gas * (dh_gas__T_gas + dh_gas__P_gas * dP_gas__T_gas)
-        dmg__V_gas = dmg__Q_gas_int * dQ_gas_int__V_gas + dmg__Q_liq_int * dQ_liq_int__V_gas + dmg__h_gas * dh_gas__P_gas * dP_gas__V_gas
+        dmg__m_gas = (
+            dmg__Q_gas_int * dQ_gas_int__m_gas
+            + dmg__Q_liq_int * dQ_liq_int__m_gas
+            + dmg__h_gas * dh_gas__P_gas * dP_gas__m_gas
+        )
+        dmg__T_gas = (
+            dmg__Q_gas_int * dQ_gas_int__T_gas
+            + dmg__Q_liq_int * dQ_liq_int__T_gas
+            + dmg__h_gas * (dh_gas__T_gas + dh_gas__P_gas * dP_gas__T_gas)
+        )
+        dmg__V_gas = (
+            dmg__Q_gas_int * dQ_gas_int__V_gas
+            + dmg__Q_liq_int * dQ_liq_int__V_gas
+            + dmg__h_gas * dh_gas__P_gas * dP_gas__V_gas
+        )
         dmg__T_liq = dmg__h_liq * self.H2.lh2_h(T_liq, deriv=True) + dmg__Q_liq_int * dQ_liq_int__T_liq
         dmg__L_int = dmg__Q_gas_int * dQ_gas_int__L_int + dmg__Q_liq_int * dQ_liq_int__L_int
         dmg__A_int = dmg__Q_gas_int * dQ_gas_int__A_int + dmg__Q_liq_int * dQ_liq_int__A_int
@@ -2385,9 +2404,7 @@ class BoilOffFillLevelCalc(om.ExplicitComponent):
         V_tank = 4 / 3 * np.pi * r**3 * self.options["end_cap_depth_ratio"] + np.pi * r**2 * L
         J["fill_level", "V_gas"] = -1 / V_tank
         J["fill_level", "radius"] = (
-            inputs["V_gas"]
-            / V_tank**2
-            * (4 * np.pi * r**2 * self.options["end_cap_depth_ratio"] + 2 * np.pi * r * L)
+            inputs["V_gas"] / V_tank**2 * (4 * np.pi * r**2 * self.options["end_cap_depth_ratio"] + 2 * np.pi * r * L)
         )
         J["fill_level", "length"] = inputs["V_gas"] / V_tank**2 * (np.pi * r**2)
 
@@ -2502,7 +2519,9 @@ class InitialTankStateModification(om.ExplicitComponent):
         self.declare_partials("m_gas", "delta_m_gas", rows=arng, cols=arng, val=np.ones(nn))
         self.declare_partials("T_gas", "delta_T_gas", rows=arng, cols=arng, val=np.ones(nn))
         self.declare_partials("T_liq", "delta_T_liq", rows=arng, cols=arng, val=np.ones(nn))
-        self.declare_partials(["V_gas", "m_gas", "m_liq"], ["radius", "length", "fill_level_init"], rows=arng, cols=np.zeros(nn))
+        self.declare_partials(
+            ["V_gas", "m_gas", "m_liq"], ["radius", "length", "fill_level_init"], rows=arng, cols=np.zeros(nn)
+        )
 
         self.declare_partials("T_gas", "ullage_T_init", rows=arng, cols=np.zeros(nn), val=np.ones(nn))
         self.declare_partials("T_liq", "liquid_T_init", rows=arng, cols=np.zeros(nn), val=np.ones(nn))
@@ -2540,7 +2559,7 @@ class InitialTankStateModification(om.ExplicitComponent):
 
         J["m_liq", "radius"] = (Vtank_r - J["V_gas", "radius"]) * H2_prop.lh2_rho(T_liq_init)
         J["m_liq", "length"] = (Vtank_L - J["V_gas", "length"]) * H2_prop.lh2_rho(T_liq_init)
-    
+
         # Derivatives w.r.t. the initial states
         J["V_gas", "fill_level_init"] = -V_tank
 
