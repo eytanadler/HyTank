@@ -36,12 +36,20 @@ class LH2TankTestCase(unittest.TestCase):
             num_nodes=nn,
             weight_fudge_factor=1.1,
             inner_safety_factor=1.5,
+            heat_multiplier=1.2,
         )
         p.model.linear_solver = om.DirectSolver()
         p.model.nonlinear_solver = om.NewtonSolver()
         p.model.nonlinear_solver.options["err_on_non_converge"] = True
         p.model.nonlinear_solver.options["solve_subsystems"] = True
         p.model.nonlinear_solver.options["maxiter"] = 20
+        p.model_options["*"] = {
+            "heater_boil_frac": 0.75,
+            "heat_transfer_C_gas_const": 0.27,
+            "heat_transfer_n_gas_const": 0.25,
+            "heat_transfer_C_liq_const": 0.27,
+            "heat_transfer_n_liq_const": 0.25,
+        }
         p.setup(force_alloc_complex=True)
 
         # Make the test extremely short so all the values are nearly the same in time
@@ -87,6 +95,13 @@ class LH2TankTestCase(unittest.TestCase):
         p.model.nonlinear_solver.options["err_on_non_converge"] = True
         p.model.nonlinear_solver.options["solve_subsystems"] = True
         p.model.nonlinear_solver.options["maxiter"] = 30
+        p.model_options["*"] = {
+            "heater_boil_frac": 0.75,
+            "heat_transfer_C_gas_const": 0.27,
+            "heat_transfer_n_gas_const": 0.25,
+            "heat_transfer_C_liq_const": 0.27,
+            "heat_transfer_n_liq_const": 0.25,
+        }
 
         p.setup()
 

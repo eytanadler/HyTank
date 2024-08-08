@@ -1085,19 +1085,18 @@ class LH2BoilOffODE(om.ExplicitComponent):
     heater_boil_frac : float
         The fraction of the heat from the heater that directly induces boil-off. The remaining heat (1 - heater_boil_frac)
         goes to heating the bulk liquid. This value must be between 0 and 1 (inclusive). This option can also be set to
-        \"input\", which makes it an input rather than an option so an optimizer can tune it. By default 0.75
+        \"input\", which makes it an input rather than an option so an optimizer can tune it. By default 0.1 (from Adler
+        2024 "Liquid hydrogen tank boil-off..." validation).
     heat_transfer_C_gas_const : float
         Multiplier on the Nusselt number used when computing the convective heat transfer coefficient between the
-        ullage and the interface. By default 0.27, which is for convection above a cooler horizontal surface
-        (see W. H. McAdams, Heat Transmission 1954).
+        ullage and the interface. By default 0.27 / 4 (from Adler 2024 "Liquid hydrogen tank boil-off..." validation).
     heat_transfer_n_gas_const : float
         Exponent on the Prandtl-Grashof product in the Nusselt number calculation between the ullage and the interface.
         By default 0.25, which is for convection above a cooler horizontal surface (see W. H. McAdams,
         Heat Transmission 1954).
     heat_transfer_C_liq_const : float
         Multiplier on the Nusselt number used when computing the convective heat transfer coefficient between the
-        liquid and the interface. By default 0.27, which is for convection below a warmer horizontal surface
-        (see W. H. McAdams, Heat Transmission 1954).
+        liquid and the interface. By default 0.27 / 20 (from Adler 2024 "Liquid hydrogen tank boil-off..." validation).
     heat_transfer_n_liq_const : float
         Exponent on the Prandtl-Grashof product in the Nusselt number calculation between the liquid and the interface.
         By default 0.25, which is for convection below a warmer horizontal surface (see W. H. McAdams,
@@ -1112,11 +1111,11 @@ class LH2BoilOffODE(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("num_nodes", default=1, desc="Number of design points to run")
         self.options.declare(
-            "heater_boil_frac", default=0.75, desc="Fraction of heat from heater that goes straight to boiling"
+            "heater_boil_frac", default=0.1, desc="Fraction of heat from heater that goes straight to boiling"
         )
-        self.options.declare("heat_transfer_C_gas_const", default=0.27, types=float, desc="Ullage convective C coefficient")
+        self.options.declare("heat_transfer_C_gas_const", default=0.27 / 4, types=float, desc="Ullage convective C coefficient")
         self.options.declare("heat_transfer_n_gas_const", default=0.25, types=float, desc="Ullage convective n coefficient")
-        self.options.declare("heat_transfer_C_liq_const", default=0.27, types=float, desc="Liquid convective C coefficient")
+        self.options.declare("heat_transfer_C_liq_const", default=0.27 / 20, types=float, desc="Liquid convective C coefficient")
         self.options.declare("heat_transfer_n_liq_const", default=0.25, types=float, desc="Liquid convective n coefficient")
         self.options.declare(
             "sigmoid_fac", default=100.0, desc="Multiplier on exponent in sigmoid for bulk boil and cloud condensation"

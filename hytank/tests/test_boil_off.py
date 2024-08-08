@@ -40,6 +40,13 @@ class BoilOffTestCase(unittest.TestCase):
             BoilOff(num_nodes=nn, fill_level_init=0.9, ullage_T_init=21, ullage_P_init=1.2e5, liquid_T_init=20),
             promotes=["*"],
         )
+        p.model_options["*"] = {
+            "heater_boil_frac": 0.75,
+            "heat_transfer_C_gas_const": 0.27,
+            "heat_transfer_n_gas_const": 0.25,
+            "heat_transfer_C_liq_const": 0.27,
+            "heat_transfer_n_liq_const": 0.25,
+        }
 
         p.setup(force_alloc_complex=True)
 
@@ -608,7 +615,7 @@ class LH2BoilOffODETestCase(unittest.TestCase):
         and bulk boiling terms.
         """
         p = om.Problem()
-        p.model.add_subsystem("model", LH2BoilOffODE(heat_transfer_C_liq_const=0.05, heat_transfer_n_liq_const=0.23), promotes=["*"])
+        p.model.add_subsystem("model", LH2BoilOffODE(heater_boil_frac=0.75, heat_transfer_C_gas_const=0.27, heat_transfer_n_gas_const=0.25, heat_transfer_C_liq_const=0.05, heat_transfer_n_liq_const=0.23), promotes=["*"])
 
         p.setup()
 
@@ -640,7 +647,7 @@ class LH2BoilOffODETestCase(unittest.TestCase):
 
     def test_derivatives(self):
         p = om.Problem()
-        p.model.add_subsystem("model", LH2BoilOffODE(heat_transfer_C_liq_const=0.05, heat_transfer_n_liq_const=0.23), promotes=["*"])
+        p.model.add_subsystem("model", LH2BoilOffODE(heater_boil_frac=0.75, heat_transfer_C_gas_const=0.27, heat_transfer_n_gas_const=0.25, heat_transfer_C_liq_const=0.05, heat_transfer_n_liq_const=0.23), promotes=["*"])
 
         p.setup(force_alloc_complex=True)
 
@@ -671,7 +678,7 @@ class LH2BoilOffODETestCase(unittest.TestCase):
 
     def test_vectorized_derivatives_with_heat_and_mass_flows(self):
         p = om.Problem()
-        p.model.add_subsystem("model", LH2BoilOffODE(heat_transfer_C_liq_const=0.05, heat_transfer_n_liq_const=0.23, num_nodes=3), promotes=["*"])
+        p.model.add_subsystem("model", LH2BoilOffODE(heater_boil_frac=0.75, heat_transfer_C_gas_const=0.27, heat_transfer_n_gas_const=0.25, heat_transfer_C_liq_const=0.05, heat_transfer_n_liq_const=0.23, num_nodes=3), promotes=["*"])
 
         p.setup(force_alloc_complex=True)
 
