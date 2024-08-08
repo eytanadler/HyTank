@@ -806,6 +806,8 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
 
         p.setup(force_alloc_complex=True)
 
+        p.model.model.H2 = H2_prop_MendezRamos
+
         r = 1.3  # m
         L = 0.7  # m
 
@@ -823,8 +825,8 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
 
         V_tank = 2 / 3 * np.pi * r**3 + np.pi * r**2 * L
         V_gas = V_tank * (1 - fill)
-        m_gas = V_gas * H2_prop.gh2_rho(P_gas, T_gas)
-        m_liq = V_tank * fill * H2_prop.lh2_rho(T_liq)
+        m_gas = V_gas * H2_prop_MendezRamos.gh2_rho(P_gas, T_gas)
+        m_liq = V_tank * fill * H2_prop_MendezRamos.lh2_rho(T_liq)
 
         assert_near_equal(p.get_val("m_gas", units="kg"), m_gas, tolerance=1e-12)
         assert_near_equal(p.get_val("m_liq", units="kg"), m_liq, tolerance=1e-12)
@@ -833,8 +835,8 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
         assert_near_equal(p.get_val("V_gas", units="m**3"), V_tank * (1 - fill), tolerance=1e-12)
 
         # Partials must be checked with FD because GH2 prop surrogates are not complex safe
-        partials = p.check_partials(method="fd", out_stream=None)
-        assert_check_partials(partials, atol=5e-4, rtol=5e-5)
+        partials = p.check_partials(method="cs", out_stream=None)
+        assert_check_partials(partials, atol=1e-9, rtol=1e-9)
 
     def test_vectorized(self):
         p = om.Problem()
@@ -893,6 +895,8 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
 
         p.setup(force_alloc_complex=True)
 
+        p.model.model.H2 = H2_prop_MendezRamos
+
         p.set_val("radius", 0.6, units="m")
         p.set_val("length", 1.3, units="m")
 
@@ -913,8 +917,8 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
         p.run_model()
 
         # Partials must be checked with FD because GH2 prop surrogates are not complex safe
-        partials = p.check_partials(method="fd", out_stream=None)
-        assert_check_partials(partials, atol=3e-4, rtol=5e-5)
+        partials = p.check_partials(method="cs", out_stream=None)
+        assert_check_partials(partials, atol=1e-9, rtol=1e-9)
 
 
 if __name__ == "__main__":

@@ -2476,6 +2476,13 @@ class InitialTankStateModification(om.ExplicitComponent):
         End cap depth divided by cylinder radius. 1 gives hemisphere, 0.5 gives 2:1 semi ellipsoid.
         Must be in the range 0-1 (inclusive). By default 1.0.
     """
+    def __init__(self, **kwargs):
+        # Hydrogen property surrogate models to use. Add this as a class attribute so that it can
+        # be changed during testing to the one from Mendez Ramos's thesis, which enables
+        # complex step derivative checking.
+        self.H2 = H2_prop
+
+        super().__init__(**kwargs)
 
     def initialize(self):
         self.options.declare("num_nodes", default=1, desc="Number of design points to run")
@@ -2554,23 +2561,23 @@ class InitialTankStateModification(om.ExplicitComponent):
         J["V_gas", "radius"] = Vtank_r * (1 - fill_init)
         J["V_gas", "length"] = Vtank_L * (1 - fill_init)
 
-        coeff = H2_prop.gh2_rho(P_init, T_gas_init).item()
+        coeff = self.H2.gh2_rho(P_init, T_gas_init).item()
         J["m_gas", "radius"] = coeff * J["V_gas", "radius"]
         J["m_gas", "length"] = coeff * J["V_gas", "length"]
 
-        J["m_liq", "radius"] = (Vtank_r - J["V_gas", "radius"]) * H2_prop.lh2_rho(T_liq_init)
-        J["m_liq", "length"] = (Vtank_L - J["V_gas", "length"]) * H2_prop.lh2_rho(T_liq_init)
+        J["m_liq", "radius"] = (Vtank_r - J["V_gas", "radius"]) * self.H2.lh2_rho(T_liq_init)
+        J["m_liq", "length"] = (Vtank_L - J["V_gas", "length"]) * self.H2.lh2_rho(T_liq_init)
 
         # Derivatives w.r.t. the initial states
         J["V_gas", "fill_level_init"] = -V_tank
 
-        drho_dP, drho_dT = H2_prop.gh2_rho(P_init, T_gas_init, deriv=True)
-        J["m_gas", "fill_level_init"] = H2_prop.gh2_rho(P_init, T_gas_init).item() * J["V_gas", "fill_level_init"]
+        drho_dP, drho_dT = self.H2.gh2_rho(P_init, T_gas_init, deriv=True)
+        J["m_gas", "fill_level_init"] = self.H2.gh2_rho(P_init, T_gas_init).item() * J["V_gas", "fill_level_init"]
         J["m_gas", "ullage_T_init"] = drho_dT * V_tank * (1 - fill_init)
         J["m_gas", "ullage_P_init"] = drho_dP * V_tank * (1 - fill_init)
 
-        J["m_liq", "fill_level_init"] = -J["V_gas", "fill_level_init"] * H2_prop.lh2_rho(T_liq_init)
-        J["m_liq", "liquid_T_init"] = V_tank * fill_init * H2_prop.lh2_rho(T_liq_init, deriv=True)
+        J["m_liq", "fill_level_init"] = -J["V_gas", "fill_level_init"] * self.H2.lh2_rho(T_liq_init)
+        J["m_liq", "liquid_T_init"] = V_tank * fill_init * self.H2.lh2_rho(T_liq_init, deriv=True)
 
     def _compute_initial_states(self, radius, length, init_vals):
         """
@@ -2587,7 +2594,7 @@ class InitialTankStateModification(om.ExplicitComponent):
         res["T_liq_init"] = T_liq_init
         res["T_gas_init"] = T_gas_init
         res["V_gas_init"] = V_tank * (1 - fill_init)
-        res["m_gas_init"] = H2_prop.gh2_rho(P_init, T_gas_init).item() * res["V_gas_init"]
-        res["m_liq_init"] = (V_tank - res["V_gas_init"]) * H2_prop.lh2_rho(T_liq_init)
+        res["m_gas_init"] = self.H2.gh2_rho(P_init, T_gas_init).item() * res["V_gas_init"]
+        res["m_liq_init"] = (V_tank - res["V_gas_init"]) * self.H2.lh2_rho(T_liq_init)
 
         return res
