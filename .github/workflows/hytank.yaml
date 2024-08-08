@@ -10,10 +10,8 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: "ubuntu-latest"
     strategy:
-      matrix:
-        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
       fail-fast: false
     env:
       OMP_NUM_THREADS: 1
@@ -31,8 +29,6 @@ jobs:
 
     - name: Install HyTank
       run: |
-        pip install numpy==1.26
-        pip install openmdao==3.30
         pip install -e .[test]
         pip install -e .[plot]
 
