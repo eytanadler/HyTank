@@ -31,6 +31,7 @@ jobs:
 
     - name: Install HyTank
       run: |
+        pip install numpy==1.26
         pip install openmdao==3.30
         pip install -e .[test]
         pip install -e .[plot]
