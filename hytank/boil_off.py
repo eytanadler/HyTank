@@ -1257,7 +1257,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
         self.T_int = self.H2.sat_gh2_T(P_gas)  # use saturated GH2 temperature
 
         # Saturated gas properties at the ullage saturation temperature. Evaluate the saturated gas
-        # properties at just T_sat_gas rather than mean film used in Mendez-Ramos because it won't
+        # properties at just T_sat_gas rather than mean film used by Mendez Ramos because it won't
         # violate the surrogate ranges and hinder robustness. It has a minimal effect on the results.
         self.cp_sat_gas = self.H2.sat_gh2_cp(self.T_int)  # specific heat at constant pressure
         self.visc_sat_gas = self.H2.sat_gh2_viscosity(self.T_int)  # viscosity
