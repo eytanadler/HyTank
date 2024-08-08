@@ -749,7 +749,8 @@ class LiquidHeight(om.ImplicitComponent):
         th_h = 2 / np.sqrt(1 - (1 - h / r) ** 2) / r
 
         Vcyl_r = (
-            r * (th - np.sin(th)) * L + r**2 / 2 * (1 - np.cos(th)) * L * th_r  # pV_cyl / pr  # pV_cyl / pth * pth / pr
+            r * (th - np.sin(th)) * L  # pV_cyl / pr
+            + r**2 / 2 * (1 - np.cos(th)) * L * th_r  # pV_cyl / pth * pth / pr
         )
         Vcyl_h = r**2 / 2 * (1 - np.cos(th)) * L * th_h
         Vcyl_L = r**2 / 2 * (th - np.sin(th))
