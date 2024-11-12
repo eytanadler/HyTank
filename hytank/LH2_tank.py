@@ -109,7 +109,7 @@ class LH2Tank(om.Group):
         the initial value input in the integrator. By default 0.0 (scalar, W)
     heat_multiplier : float
         Multiplier on the output heat to account for heat through supports
-        and other connections, by default 1.2 (scalar, dimensionless)
+        and other connections, by default 2.0 (scalar, dimensionless)
     weight_fudge_factor : float
         Multiplier on tank weight to account for supports, valves, etc., by default 1.5
     stiffening_multiplier : float
@@ -144,7 +144,7 @@ class LH2Tank(om.Group):
         self.options.declare("ullage_P_init", default=1.5e5, desc="Initial ullage pressure (Pa)")
         self.options.declare("liquid_T_init", default=20.0, desc="Initial bulk liquid temp (K)")
         self.options.declare("heater_Q_add_init", default=0.0, types=float, desc="Initial heat input from heater")
-        self.options.declare("heat_multiplier", default=1.2, desc="Multiplier on heat leak")
+        self.options.declare("heat_multiplier", default=2.0, desc="Multiplier on heat leak")
         self.options.declare("weight_fudge_factor", default=1.5, desc="Weight multiplier to account for other stuff")
         self.options.declare("stiffening_multiplier", default=0.8, desc="Multiplier on wall thickness")
         self.options.declare("inner_safety_factor", default=2.0, desc="Safety factor on inner wall thickness")
@@ -284,7 +284,7 @@ class LH2TankThermals(om.Group):
         Initial temperature of bulk liquid hydrogen, default 20 K (scalar, K)
     heat_multiplier : float
         Multiplier on the output heat to account for heat through supports
-        and other connections, by default 1.2 (scalar, dimensionless)
+        and other connections, by default 2.0 (scalar, dimensionless)
     end_cap_depth_ratio : float
         End cap depth divided by cylinder radius. 1 gives hemisphere, 0.5 gives 2:1 semi ellipsoid.
         Must be in the range 0-1 (inclusive). By default 1.0.
@@ -299,7 +299,7 @@ class LH2TankThermals(om.Group):
         self.options.declare("ullage_T_init", default=21.0, desc="Initial ullage temp (K)")
         self.options.declare("ullage_P_init", default=1.5e5, desc="Initial ullage pressure (Pa)")
         self.options.declare("liquid_T_init", default=20.0, desc="Initial bulk liquid temp (K)")
-        self.options.declare("heat_multiplier", default=1.2, desc="Multiplier on heat leak")
+        self.options.declare("heat_multiplier", default=2.0, desc="Multiplier on heat leak")
         self.options.declare(
             "end_cap_depth_ratio", lower=0.0, upper=1.0, default=1.0, desc="End cap depth / cylinder radius"
         )

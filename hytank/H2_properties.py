@@ -68,6 +68,18 @@ class HydrogenProperties:
                 },
                 "lh2_cp": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Cp (l, J/g*K)") * 1e3},
                 "lh2_rho": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Density (l, kg/m3)")},
+                "lh2_k": {
+                    "x": get_sat_property("Temperature (K)"),
+                    "y": get_sat_property("Therm. Cond. (l, W/m*K)"),
+                },
+                "lh2_viscosity": {
+                    "x": get_sat_property("Temperature (K)"),
+                    "y": get_sat_property("Viscosity (l, Pa*s)"),
+                },
+                "lh2_beta": {
+                    "x": get_sat_property("Temperature (K)"),
+                    "y": get_sat_property("Thermal Expansion Coefficient (l, 1/K)"),
+                },
                 "sat_gh2_rho": {"x": get_sat_property("Temperature (K)"), "y": get_sat_property("Density (v, kg/m3)")},
                 "sat_gh2_h": {
                     "x": get_sat_property("Temperature (K)"),
@@ -503,6 +515,72 @@ class HydrogenProperties:
         """
         return self._eval_surrogate("lh2_rho", T, deriv=deriv)
 
+    def lh2_k(self, T, deriv=False):
+        """
+        Thermal conductivity of saturated liquid hydrogen.
+
+        Parameters
+        ----------
+        T : float or numpy array
+            Hydrogen temperature (K)
+        deriv : bool or int, optional
+            Compute the first derivative of the output with respect to T instead
+            of the output itself, or alternatively set deriv to 2 to return
+            the second derivative, by default False (setting deriv to 1 is
+            equivalent to setting it to True)
+
+        Returns
+        -------
+        float or numpy array
+            Thermal conductivity of saturated liquid hydrogen (W/(m-K)) or
+            the derivative with respect to T if deriv is set to True
+        """
+        return self._eval_surrogate("lh2_k", T, deriv=deriv)
+
+    def lh2_viscosity(self, T, deriv=False):
+        """
+        Dynamic viscosity of saturated liquid hydrogen.
+
+        Parameters
+        ----------
+        T : float or numpy array
+            Hydrogen temperature (K)
+        deriv : bool or int, optional
+            Compute the first derivative of the output with respect to T instead
+            of the output itself, or alternatively set deriv to 2 to return
+            the second derivative, by default False (setting deriv to 1 is
+            equivalent to setting it to True)
+
+        Returns
+        -------
+        float or numpy array
+            Dynamic viscosity of saturated liquid hydrogen (Pa-s) or
+            the derivative with respect to T if deriv is set to True
+        """
+        return self._eval_surrogate("lh2_viscosity", T, deriv=deriv)
+
+    def lh2_beta(self, T, deriv=False):
+        """
+        Coefficient of thermal expansion of saturated liquid hydrogen.
+
+        Parameters
+        ----------
+        T : float or numpy array
+            Hydrogen temperature (K)
+        deriv : bool or int, optional
+            Compute the first derivative of the output with respect to T instead
+            of the output itself, or alternatively set deriv to 2 to return
+            the second derivative, by default False (setting deriv to 1 is
+            equivalent to setting it to True)
+
+        Returns
+        -------
+        float or numpy array
+            Coefficient of thermal expansion of saturated liquid hydrogen (1 / K)
+            or the derivative with respect to T if deriv is set to True
+        """
+        return self._eval_surrogate("lh2_beta", T, deriv=deriv)
+
     def sat_gh2_rho(self, T, deriv=False):
         """
         Density of saturated gaseous hydrogen.
@@ -593,7 +671,7 @@ class HydrogenProperties:
 
     def sat_gh2_viscosity(self, T, deriv=False):
         """
-        Viscosity of saturated gaseous hydrogen.
+        Dynamic viscosity of saturated gaseous hydrogen.
 
         Parameters
         ----------
@@ -608,8 +686,8 @@ class HydrogenProperties:
         Returns
         -------
         float or numpy array
-        Viscosity of saturated gaseous hydrogen (Pa-s) or the derivative with respect
-        to T if deriv is set to True
+            Dynamic viscosity of saturated gaseous hydrogen (Pa-s) or
+            the derivative with respect to T if deriv is set to True
         """
         return self._eval_surrogate("sat_gh2_viscosity", T, deriv=deriv)
 

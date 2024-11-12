@@ -1166,6 +1166,96 @@ def lh2_rho(T, deriv=False):
     )
 
 
+def lh2_k(T, deriv=False):
+    """
+    Thermal conductivity of saturated liquid hydrogen.
+    Uses a quadratic fit of the surrogate from H2_properties.py.
+    This was mostly added for derivative testing purposes and not for production use.
+
+    Parameters
+    ----------
+    T : float or numpy array
+        Hydrogen temperature (K)
+    deriv : bool or int, optional
+        Compute the first derivative of the output with respect to T instead
+        of the output itself, or alternatively set deriv to 2 to return
+        the second derivative, by default False (setting deriv to 1 is
+        equivalent to setting it to True)
+
+    Returns
+    -------
+    float or numpy array
+        Thermal conductivity of saturated liquid hydrogen (W/(m-K)) or
+        the derivative with respect to T if deriv is set to True
+    """
+    if not isinstance(deriv, bool):
+        raise ValueError("deriv input must be a boolean")
+
+    if deriv:
+        return 2 * -0.00011780751646212103 * T + 0.005025141732149419
+    return -0.00011780751646212103 * T**2 + 0.005025141732149419 * T + 0.05028285917065491
+
+
+def lh2_viscosity(T, deriv=False):
+    """
+    Dynamic viscosity of saturated liquid hydrogen.
+    Uses a quadratic fit of the surrogate from H2_properties.py.
+    This was mostly added for derivative testing purposes and not for production use.
+
+    Parameters
+    ----------
+    T : float or numpy array
+        Hydrogen temperature (K)
+    deriv : bool or int, optional
+        Compute the first derivative of the output with respect to T instead
+        of the output itself, or alternatively set deriv to 2 to return
+        the second derivative, by default False (setting deriv to 1 is
+        equivalent to setting it to True)
+
+    Returns
+    -------
+    float or numpy array
+        Dynamic viscosity of saturated liquid hydrogen (Pa-s) or
+        the derivative with respect to T if deriv is set to True
+    """
+    if not isinstance(deriv, bool):
+        raise ValueError("deriv input must be a boolean")
+
+    if deriv:
+        return 2 * 6.12354624060653e-08 * T - 3.7677099409542915e-06
+    return 6.12354624060653e-08 * T**2 - 3.7677099409542915e-06 * T + 6.501471081626786e-05
+
+
+def lh2_beta(T, deriv=False):
+    """
+    Coefficient of thermal expansion of saturated liquid hydrogen.
+    Uses a quadratic fit of the surrogate from H2_properties.py.
+    This was mostly added for derivative testing purposes and not for production use.
+
+    Parameters
+    ----------
+    T : float or numpy array
+        Hydrogen temperature (K)
+    deriv : bool or int, optional
+        Compute the first derivative of the output with respect to T instead
+        of the output itself, or alternatively set deriv to 2 to return
+        the second derivative, by default False (setting deriv to 1 is
+        equivalent to setting it to True)
+
+    Returns
+    -------
+    float or numpy array
+        Coefficient of thermal expansion of saturated liquid hydrogen (1 / K)
+        or the derivative with respect to T if deriv is set to True
+    """
+    if not isinstance(deriv, bool):
+        raise ValueError("deriv input must be a boolean")
+
+    if deriv:
+        return 2 * 0.0002876573504834155 * T - 0.009922769421340946
+    return 0.0002876573504834155 * T**2 - 0.009922769421340946 * T + 0.09728151340667823
+
+
 def sat_gh2_rho(T, deriv=False):
     """
     Density of saturated gaseous hydrogen.

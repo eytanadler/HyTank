@@ -334,7 +334,7 @@ class VacuumWallThickness(om.ExplicitComponent):
         self.add_output("thickness", lower=0.0, units="m")
         self.add_output("weight", lower=0.0, units="kg")
 
-        self.declare_partials(["thickness", "weight"], ["design_pressure_differential", "radius", "length"], method="fd")#, step=1e-200)
+        self.declare_partials(["thickness", "weight"], ["design_pressure_differential", "radius", "length"])
 
     def compute(self, inputs, outputs):
         p = inputs["design_pressure_differential"]
@@ -353,7 +353,7 @@ class VacuumWallThickness(om.ExplicitComponent):
 
         # Take the smooth maximum of the two
         b = self.options["smooth_max_exp"]
-        outputs["thickness"] = stiff_mult * (t_cyl ** b + t_sph ** b) ** (1 / b)
+        outputs["thickness"] = stiff_mult * (t_cyl**b + t_sph**b) ** (1 / b)
 
         surface_area = 4 * np.pi * r**2 + 2 * np.pi * r * L
         outputs["weight"] = surface_area * outputs["thickness"] * density
@@ -387,14 +387,26 @@ class VacuumWallThickness(om.ExplicitComponent):
 
         # Derivative from smoothed max of the two thicknesses
         b = self.options["smooth_max_exp"]
-        dt_dp = stiff_mult * (t_cyl ** b + t_sph ** b) ** (1 / b - 1) * (t_cyl ** (b - 1) * dtcyl_dp + t_sph ** (b - 1) * dtsph_dp)
-        dt_dr = stiff_mult * (t_cyl ** b + t_sph ** b) ** (1 / b - 1) * (t_cyl ** (b - 1) * dtcyl_dr + t_sph ** (b - 1) * dtsph_dr)
-        dt_dL = stiff_mult * (t_cyl ** b + t_sph ** b) ** (1 / b - 1) * (t_cyl ** (b - 1) * dtcyl_dL + t_sph ** (b - 1) * dtsph_dL)
+        dt_dp = (
+            stiff_mult
+            * (t_cyl**b + t_sph**b) ** (1 / b - 1)
+            * (t_cyl ** (b - 1) * dtcyl_dp + t_sph ** (b - 1) * dtsph_dp)
+        )
+        dt_dr = (
+            stiff_mult
+            * (t_cyl**b + t_sph**b) ** (1 / b - 1)
+            * (t_cyl ** (b - 1) * dtcyl_dr + t_sph ** (b - 1) * dtsph_dr)
+        )
+        dt_dL = (
+            stiff_mult
+            * (t_cyl**b + t_sph**b) ** (1 / b - 1)
+            * (t_cyl ** (b - 1) * dtcyl_dL + t_sph ** (b - 1) * dtsph_dL)
+        )
         J["thickness", "design_pressure_differential"] = dt_dp
         J["thickness", "radius"] = dt_dr
         J["thickness", "length"] = dt_dL
 
-        t = stiff_mult * (t_cyl ** b + t_sph ** b) ** (1 / b)
+        t = stiff_mult * (t_cyl**b + t_sph**b) ** (1 / b)
         A = 4 * np.pi * r**2 + 2 * np.pi * r * L
         dAdr = 8 * np.pi * r + 2 * np.pi * L
         dAdL = 2 * np.pi * r

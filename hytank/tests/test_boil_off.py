@@ -40,6 +40,13 @@ class BoilOffTestCase(unittest.TestCase):
             BoilOff(num_nodes=nn, fill_level_init=0.9, ullage_T_init=21, ullage_P_init=1.2e5, liquid_T_init=20),
             promotes=["*"],
         )
+        p.model_options["*"] = {
+            "heater_boil_frac": 0.75,
+            "heat_transfer_C_gas_const": 0.27,
+            "heat_transfer_n_gas_const": 0.25,
+            "heat_transfer_C_liq_const": 0.27,
+            "heat_transfer_n_liq_const": 0.25,
+        }
 
         p.setup(force_alloc_complex=True)
 
@@ -67,17 +74,17 @@ class BoilOffTestCase(unittest.TestCase):
             p.get_val("m_gas", units="kg"),
             np.array(
                 [
-                    0.29324779357702396,
-                    0.9755895133768798,
-                    2.2827021586516327,
-                    3.9076803536638063,
-                    5.653242606173135,
-                    7.443009431496469,
-                    9.267032677754145,
-                    11.133543749805373,
-                    13.050353608670388,
-                    15.025465846370599,
-                    17.076664226060885,
+                    0.293247793577024,
+                    0.714516001744989,
+                    1.359469349861478,
+                    2.111699994691247,
+                    2.931699133561161,
+                    3.840692837957930,
+                    4.877714143446416,
+                    6.076741690468928,
+                    7.464475297083723,
+                    9.064721886596439,
+                    10.899298034694326,
                 ]
             ),
             tolerance=1e-9,
@@ -86,17 +93,17 @@ class BoilOffTestCase(unittest.TestCase):
             p.get_val("m_liq", units="kg"),
             np.array(
                 [
-                    121.77078809767069,
-                    112.02844637787082,
-                    101.66133373259608,
-                    90.9763555375839,
-                    80.17079328507457,
-                    69.32102645975124,
-                    58.43700321349357,
-                    47.51049214144234,
-                    36.53368228257732,
-                    25.498570044877113,
-                    14.3873716651868,
+                    121.770788097670689,
+                    112.289519889502714,
+                    102.584566541386224,
+                    92.772335896556470,
+                    82.892336757686550,
+                    72.923343053289784,
+                    62.826321747801309,
+                    52.567294200778768,
+                    42.119560594163985,
+                    31.459314004651254,
+                    20.564737856553368,
                 ]
             ),
             tolerance=1e-9,
@@ -105,17 +112,17 @@ class BoilOffTestCase(unittest.TestCase):
             p.get_val("T_gas", units="K"),
             np.array(
                 [
-                    21.0,
-                    27.22920929665294,
-                    29.48250288827393,
-                    30.051772606519144,
-                    30.224005084840208,
-                    30.404892718292665,
-                    30.62040539830591,
-                    30.827574742229217,
-                    31.010484383850883,
-                    31.18200821373119,
-                    31.375056927935542,
+                    21.000000000000000,
+                    24.928776569433140,
+                    26.437966947004398,
+                    26.901711031779129,
+                    27.186328734990362,
+                    27.582276165197001,
+                    28.086252025539011,
+                    28.635216255982595,
+                    29.197172923343686,
+                    29.777006447983744,
+                    30.410287726172399,
                 ]
             ),
             tolerance=1e-9,
@@ -124,17 +131,17 @@ class BoilOffTestCase(unittest.TestCase):
             p.get_val("T_liq", units="K"),
             np.array(
                 [
-                    20.0,
-                    20.144187520412697,
-                    20.421985779163165,
-                    20.790750319602548,
-                    21.224204973496075,
-                    21.717111106362765,
-                    22.280328759832923,
-                    22.937024193511277,
-                    23.727494296066705,
-                    24.732382281254885,
-                    26.16774969882635,
+                    20.000000000000000,
+                    20.250392707965091,
+                    20.793847903836113,
+                    21.507169313999391,
+                    22.297781132424635,
+                    23.117274925183285,
+                    23.950129277603061,
+                    24.796843964277858,
+                    25.664906990939667,
+                    26.571066688775932,
+                    27.560786226930457,
                 ]
             ),
             tolerance=1e-9,
@@ -143,17 +150,17 @@ class BoilOffTestCase(unittest.TestCase):
             p.get_val("P_gas", units="Pa"),
             np.array(
                 [
-                    120025.05024726999,
-                    289995.72285539535,
-                    475610.7007027782,
-                    593235.268619668,
-                    662839.4198457345,
-                    710377.2007241278,
-                    747352.5474152574,
-                    777417.4557615193,
-                    802338.8010654534,
-                    823933.7339836007,
-                    844515.0694483466,
+                    120025.050247269944521,
+                    201147.688795425376156,
+                    276885.289365169941448,
+                    327015.838725500856526,
+                    363436.853224313759711,
+                    397715.682287567877211,
+                    434429.972553370287642,
+                    474225.378872489614878,
+                    516868.241007197066210,
+                    562553.452367093414068,
+                    612179.439688944141380,
                 ]
             ),
             tolerance=1e-9,
@@ -162,17 +169,17 @@ class BoilOffTestCase(unittest.TestCase):
             p.get_val("fill_level"),
             np.array(
                 [
-                    0.9,
-                    0.8279470218438476,
-                    0.750987417594691,
-                    0.6712536196684832,
-                    0.590083423726707,
-                    0.5079259185456383,
-                    0.4247197650332723,
-                    0.3402212682006155,
-                    0.25409836202841996,
-                    0.16582612755657833,
-                    0.07427322580024691,
+                    0.900000000000000,
+                    0.829860540711408,
+                    0.757546454164775,
+                    0.683660833950111,
+                    0.608274642532347,
+                    0.531043021942039,
+                    0.451495726161860,
+                    0.369174837686314,
+                    0.283618990779241,
+                    0.194284636951486,
+                    0.100429938370160,
                 ]
             ),
             tolerance=1e-9,
@@ -181,17 +188,17 @@ class BoilOffTestCase(unittest.TestCase):
             p.get_val("integ.Q_add", units="kW"),
             np.array(
                 [
-                    0.0,
-                    0.6235501924944253,
-                    0.8771597679332102,
-                    0.9529132774798601,
-                    0.9716877270153,
-                    0.9810342748754619,
-                    0.9896598375045959,
-                    0.9958778063635108,
-                    0.9989090690361989,
-                    0.9998159416698612,
-                    0.9999005115250991,
+                    0.000000000000000,
+                    0.623550192494425,
+                    0.877159767933210,
+                    0.952913277479860,
+                    0.971687727015300,
+                    0.981034274875462,
+                    0.989659837504596,
+                    0.995877806363511,
+                    0.998909069036199,
+                    0.999815941669861,
+                    0.999900511525099,
                 ]
             ),
             tolerance=1e-9,
@@ -608,7 +615,17 @@ class LH2BoilOffODETestCase(unittest.TestCase):
         and bulk boiling terms.
         """
         p = om.Problem()
-        p.model.add_subsystem("model", LH2BoilOffODE(), promotes=["*"])
+        p.model.add_subsystem(
+            "model",
+            LH2BoilOffODE(
+                heater_boil_frac=0.75,
+                heat_transfer_C_gas_const=0.27,
+                heat_transfer_n_gas_const=0.25,
+                heat_transfer_C_liq_const=0.05,
+                heat_transfer_n_liq_const=0.23,
+            ),
+            promotes=["*"],
+        )
 
         p.setup()
 
@@ -631,16 +648,26 @@ class LH2BoilOffODETestCase(unittest.TestCase):
 
         p.run_model()
 
-        assert_near_equal(p.get_val("m_dot_gas", units="kg/s"), 5.509489041153447e-05, tolerance=1e-12)
+        assert_near_equal(p.get_val("m_dot_gas", units="kg/s"), 6.587730120657324e-05, tolerance=1e-12)
         assert_near_equal(p.get_val("m_dot_gas", units="kg/s"), -p.get_val("m_dot_liq", units="kg/s"), tolerance=1e-12)
-        assert_near_equal(p.get_val("T_dot_gas", units="K/s"), 0.0005454013001323098, tolerance=1e-12)
-        assert_near_equal(p.get_val("T_dot_liq", units="K/s"), 2.5540236536296463e-06, tolerance=1e-12)
-        assert_near_equal(p.get_val("V_dot_gas", units="m**3/s"), 7.818545971578757e-07, tolerance=1e-12)
-        assert_near_equal(p.get_val("P_gas", units="Pa"), 107531.39634912706, tolerance=1e-12)
+        assert_near_equal(p.get_val("T_dot_gas", units="K/s"), 0.000616693840187, tolerance=1e-12)
+        assert_near_equal(p.get_val("T_dot_liq", units="K/s"), 2.028935422089373e-06, tolerance=1e-12)
+        assert_near_equal(p.get_val("V_dot_gas", units="m**3/s"), 9.348683773029187e-07, tolerance=1e-12)
+        assert_near_equal(p.get_val("P_gas", units="Pa"), 107531.396349127055146, tolerance=1e-12)
 
     def test_derivatives(self):
         p = om.Problem()
-        p.model.add_subsystem("model", LH2BoilOffODE(), promotes=["*"])
+        p.model.add_subsystem(
+            "model",
+            LH2BoilOffODE(
+                heater_boil_frac=0.75,
+                heat_transfer_C_gas_const=0.27,
+                heat_transfer_n_gas_const=0.25,
+                heat_transfer_C_liq_const=0.05,
+                heat_transfer_n_liq_const=0.23,
+            ),
+            promotes=["*"],
+        )
 
         p.setup(force_alloc_complex=True)
 
@@ -671,7 +698,18 @@ class LH2BoilOffODETestCase(unittest.TestCase):
 
     def test_vectorized_derivatives_with_heat_and_mass_flows(self):
         p = om.Problem()
-        p.model.add_subsystem("model", LH2BoilOffODE(num_nodes=3), promotes=["*"])
+        p.model.add_subsystem(
+            "model",
+            LH2BoilOffODE(
+                heater_boil_frac=0.75,
+                heat_transfer_C_gas_const=0.27,
+                heat_transfer_n_gas_const=0.25,
+                heat_transfer_C_liq_const=0.05,
+                heat_transfer_n_liq_const=0.23,
+                num_nodes=3,
+            ),
+            promotes=["*"],
+        )
 
         p.setup(force_alloc_complex=True)
 
@@ -768,6 +806,8 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
 
         p.setup(force_alloc_complex=True)
 
+        p.model.model.H2 = H2_prop_MendezRamos
+
         r = 1.3  # m
         L = 0.7  # m
 
@@ -785,8 +825,8 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
 
         V_tank = 2 / 3 * np.pi * r**3 + np.pi * r**2 * L
         V_gas = V_tank * (1 - fill)
-        m_gas = V_gas * H2_prop.gh2_rho(P_gas, T_gas)
-        m_liq = V_tank * fill * H2_prop.lh2_rho(T_liq)
+        m_gas = V_gas * H2_prop_MendezRamos.gh2_rho(P_gas, T_gas)
+        m_liq = V_tank * fill * H2_prop_MendezRamos.lh2_rho(T_liq)
 
         assert_near_equal(p.get_val("m_gas", units="kg"), m_gas, tolerance=1e-12)
         assert_near_equal(p.get_val("m_liq", units="kg"), m_liq, tolerance=1e-12)
@@ -795,8 +835,8 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
         assert_near_equal(p.get_val("V_gas", units="m**3"), V_tank * (1 - fill), tolerance=1e-12)
 
         # Partials must be checked with FD because GH2 prop surrogates are not complex safe
-        partials = p.check_partials(method="fd", out_stream=None)
-        assert_check_partials(partials, atol=5e-4, rtol=5e-5)
+        partials = p.check_partials(method="cs", out_stream=None)
+        assert_check_partials(partials, atol=1e-9, rtol=1e-9)
 
     def test_vectorized(self):
         p = om.Problem()
@@ -855,9 +895,11 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
 
         p.setup(force_alloc_complex=True)
 
+        p.model.model.H2 = H2_prop_MendezRamos
+
         p.set_val("radius", 0.6, units="m")
         p.set_val("length", 1.3, units="m")
-        
+
         # Initial conditions
         p.set_val("fill_level_init", 0.16)
         p.set_val("ullage_T_init", 24, units="K")
@@ -875,8 +917,8 @@ class InitialTankStateModificationTestCase(unittest.TestCase):
         p.run_model()
 
         # Partials must be checked with FD because GH2 prop surrogates are not complex safe
-        partials = p.check_partials(method="fd", out_stream=None)
-        assert_check_partials(partials, atol=3e-4, rtol=5e-5)
+        partials = p.check_partials(method="cs", out_stream=None)
+        assert_check_partials(partials, atol=1e-9, rtol=1e-9)
 
 
 if __name__ == "__main__":
