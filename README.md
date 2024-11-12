@@ -5,6 +5,8 @@
 HyTank is a toolkit for modeling the behavior of cryogenic liquid hydrogen tanks.
 It includes models for boil-off (including fuel extraction/filling and heater operation), heat leak, and tank weight.
 
+For more details, see the [journal paper](https://www.researchgate.net/publication/385741253).
+
 <h2 align="center">
     <img src=".github/tank_diagram.png" width="500" />
 </h2>
@@ -33,3 +35,21 @@ This should print out the list of tests as it runs them and tell you whether the
 ## Getting started
 
 Have a look in the examples folder, which contains sample scripts that run the model and visualize the results.
+
+## Citation
+
+Please cite this software by reference to the [journal paper](https://www.researchgate.net/publication/385741253):
+
+Eytan J. Adler and Joaquim R. R. A. Martins, "Liquid hydrogen tank boil-off model for design and optimization", Journal of Thermophysics and Heat Transfer, November 2024.
+
+```
+@article{Adler2024b,
+	author = {Eytan J. Adler and Joaquim R. R. A. Martins},
+	issn = {1533-6808},
+	journal = {Journal of Thermophysics and Heat Transfer},
+	month = {November},
+	publisher = {American Institute of Aeronautics and Astronautics},
+	title = {Liquid hydrogen tank boil-off model for design and optimization},
+	year = {2024}
+}
+```
