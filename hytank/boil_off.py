@@ -1363,7 +1363,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
         )
 
         # Do abs in a way that tracks which signs are flipped so we can accommodate it in the partials
-        self.m_dot_bb_sign = np.sign(self.m_dot_bulk_boil)
+        self.m_dot_bb_sign = np.sign(self.m_dot_bulk_boil.real)
         self.m_dot_bulk_boil *= self.m_dot_bb_sign
 
         # Add bulk liquid boiling to the ODEs at time steps where the
@@ -1375,7 +1375,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
         self.idx_P_overflow = (
             np.abs(self.P_diff) > self.exp_limit
         )  # any magnitudes > 50 are limited to prevent overflows in exp
-        self.P_diff[self.idx_P_overflow] = self.exp_limit * np.sign(self.P_diff[self.idx_P_overflow])
+        self.P_diff[self.idx_P_overflow] = self.exp_limit * np.sign(self.P_diff[self.idx_P_overflow].real)
         self.bulk_boil_multiplier = 1 / (1 + np.exp(self.P_diff))
 
         # ============================= Cloud condensation =============================
@@ -1400,7 +1400,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
         )
 
         # Do abs in a way that tracks which signs are flipped so we can accommodate it in the partials
-        self.m_dot_cc_sign = np.sign(self.m_dot_cloud_cond)
+        self.m_dot_cc_sign = np.sign(self.m_dot_cloud_cond.real)
         self.m_dot_cloud_cond *= self.m_dot_cc_sign
 
         # Add cloud condensation to the ODEs at time steps where the
@@ -1412,7 +1412,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
         self.idx_T_overflow = (
             np.abs(self.T_diff) > self.exp_limit
         )  # any magnitudes > 50 are limited to prevent overflows in exp
-        self.T_diff[self.idx_T_overflow] = self.exp_limit * np.sign(self.T_diff[self.idx_T_overflow])
+        self.T_diff[self.idx_T_overflow] = self.exp_limit * np.sign(self.T_diff[self.idx_T_overflow].real)
         self.cloud_cond_multiplier = 1 / (1 + np.exp(self.T_diff))
 
         # ================ Add bulk boiling and cloud condensation to ODEs ================
@@ -1607,7 +1607,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
             / self.visc_sat_gas**3
             * self.H2.sat_gh2_viscosity(self.T_int, deriv=True)
         )
-        abs_val_mult = np.sign(T_gas - self.T_int)  # derivative of abs(T_gas - T_int) w.r.t. T_gas
+        abs_val_mult = np.sign(np.real(T_gas - self.T_int))  # derivative of abs(T_gas - T_int) w.r.t. T_gas
         dGrg__T_int += (  # p(Grg)/p(T_int)
             GRAV_CONST * self.beta_sat_gas * self.rho_sat_gas**2 * (-abs_val_mult) * L_int**3 / self.visc_sat_gas**2
         )
@@ -1691,7 +1691,7 @@ class LH2BoilOffODE(om.ExplicitComponent):
         )
 
         # Grashof number total derivatives
-        abs_val_mult = np.sign(T_liq - self.T_int)  # derivative of abs(T_liq - T_int) w.r.t. T_liq
+        abs_val_mult = np.sign(np.real(T_liq - self.T_int))  # derivative of abs(T_liq - T_int) w.r.t. T_liq
         dGrl__T_int = (  # p(Grg)/p(T_int)
             GRAV_CONST * self.beta_liq * self.rho_liq**2 * (-abs_val_mult) * L_int**3 / self.visc_liq**2
         )
